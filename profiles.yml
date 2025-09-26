@@ -1,4 +1,4 @@
-dbt_itemmaster:
+dbt_my_dbt_project:
   target: dev
   outputs:
     dev:
