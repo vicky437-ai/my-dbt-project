@@ -1,16 +1,23 @@
-
-# Name your project! Project names should contain only lowercase characters
-# and underscores. A good package name should reflect your organization's
-# name or the intended use of these models
-name: 'my_dbt_project'
+name: 'dbt_my_dbt_project'
 version: '1.0.0'
+config-version: 2
+
+# This dbt project combines multiple workflows:
+# - wf_AM_DI_CUSTOMER
+# - wf_AP_FF_CITIBANK_VCA
+# - wf_BL_FF_ZJ_JOURNALS
+# - wf_BL_FF_ZJ_JOURNALS_STG
+# - wf_CM_Z1_DAILY_SALES_FEED
+# - wf_DI_ITEM_MTRL_MASTER
+# - wf_FF_AT_Z1_GL_ACCOUNT
+# - wf_FF_AT_ZJ_GL_ACCOUNT
+# - wf_S_BP_ARURHD
+
 
 # This setting configures which "profile" dbt uses for this project.
-profile: 'my_dbt_project'
+profile: 'dbt_my_dbt_project'
 
 # These configurations specify where dbt should look for different types of files.
-# The `model-paths` config, for example, states that models in this project can be
-# found in the "models/" directory. You probably won't need to change these!
 model-paths: ["models"]
 analysis-paths: ["analyses"]
 test-paths: ["tests"]
@@ -18,19 +25,45 @@ seed-paths: ["seeds"]
 macro-paths: ["macros"]
 snapshot-paths: ["snapshots"]
 
+target-path: "target"  # directory which will store compiled SQL files
 clean-targets:         # directories to be removed by `dbt clean`
   - "target"
   - "dbt_packages"
 
-
 # Configuring models
-# Full documentation: https://docs.getdbt.com/docs/configuring-models
-
-# In this example config, we tell dbt to build all models in the example/
-# directory as views. These settings can be overridden in the individual model
-# files using the `{{ config(...) }}` macro.
 models:
-  my_dbt_project:
+  dbt_my_dbt_project:
     # Config indicated by + and applies to all files under models/example/
-    example:
+    staging:
       +materialized: view
+      +docs:
+        node_color: "lightblue"
+    intermediate:
+      +materialized: view
+      +docs:
+        node_color: "orange"
+    marts:
+      +materialized: table
+      +docs:
+        node_color: "green"
+
+# Global configurations
+vars:
+  # Parameterization support for original Informatica parameters
+  param_sq_override: ""
+  param_sq_filter: ""
+  param_src_pre_sql: ""
+  param_src_post_sql: ""
+  param_tgt_pre_sql: "TRUNCATE TABLE {{ this }}"
+  param_tgt_post_sql: ""
+  param_src_tbl_nme1: "CUST_MASTER"
+  param_src_tbl_nme2: "CUST_ADRS"
+  param_src_tbl_nme3: "PTNR_FCTN"
+  param_tgt_tbl_nme: "CUSTOMER"
+  param_lkp_tbl_nme1: "BUS_PTNR_IDS"
+  param_lkp_override_bus_ptnr_ids: ""
+
+# Seeds configuration
+seeds:
+  dbt_my_dbt_project:
+    +quote_columns: false

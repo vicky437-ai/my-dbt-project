@@ -1,0 +1,45 @@
+# From wf_DI_ITEM_MTRL_MASTER.XML
+version: 2
+
+models:
+  - name: int_material_joined_desc
+    description: "Material data joined with product descriptions"
+    columns:
+      - name: product
+        description: "Material number - primary key"
+        tests:
+          - not_null
+          - unique
+      - name: product_description
+        description: "Material description from product text table"
+        tests:
+          - not_null
+
+  - name: int_material_base_enriched
+    description: "Base material data with initial enrichment"
+    columns:
+      - name: product
+        description: "Material number"
+        tests:
+          - not_null
+      - name: processed_language_key
+        description: "Processed language key"
+        tests:
+          - accepted_values:
+              values: ['EN']
+
+  - name: int_material_lookups
+    description: "Material master with all characteristic lookups applied"
+    tests:
+      - dbt_utils.row_count:
+          above: 0
+    columns:
+      - name: product
+        description: "Material number"
+        tests:
+          - not_null
+          - unique
+      - name: product_description
+        description: "Material description"
+        tests:
+          - not_null

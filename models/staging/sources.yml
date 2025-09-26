@@ -1,0 +1,2585 @@
+# From wf_AM_DI_CUSTOMER.XML
+version: 2
+
+sources:
+  - name: stg_mdg_cust
+    description: "Staging MDG Customer data from Oracle database"
+    database: STG_MDG_CUST
+    schema: STG_MDG_CUST
+    tables:
+      - name: cust_master
+        description: "Customer master data containing primary customer information"
+        columns:
+          - name: cust_nbr
+            description: "Customer number - Primary Key"
+            data_type: varchar2(10)
+            tests:
+              - not_null
+              - unique
+          - name: cntry_key
+            description: "Country key"
+            data_type: varchar2(3)
+          - name: city
+            description: "City name"
+            data_type: varchar2(35)
+          - name: po_cd
+            description: "Postal code"
+            data_type: varchar2(10)
+          - name: region_key
+            description: "Region key"
+            data_type: varchar2(3)
+          - name: street
+            description: "Street address"
+            data_type: varchar2(35)
+          - name: tel_nbr_1
+            description: "Primary telephone number"
+            data_type: varchar2(16)
+          - name: fax_nbr
+            description: "Fax number"
+            data_type: varchar2(31)
+          - name: industry_tp
+            description: "Industry type"
+            data_type: varchar2(30)
+          - name: uniform_rsrc_lctr
+            description: "Uniform resource locator (URL)"
+            data_type: varchar2(132)
+          - name: fscl_yr_vrnt
+            description: "Fiscal year variant"
+            data_type: varchar2(2)
+          - name: annual_sales
+            description: "Annual sales amount"
+            data_type: number(15,2)
+          - name: central_ordr_blk
+            description: "Central order block indicator"
+            data_type: varchar2(2)
+          - name: attribute_9
+            description: "Customer attribute 9"
+            data_type: varchar2(3)
+          - name: created_by
+            description: "Record created by user"
+            data_type: varchar2(12)
+          - name: created_dt
+            description: "Record creation date"
+            data_type: date
+          - name: last_chg_dt
+            description: "Last change date"
+            data_type: date
+          - name: etl_load_dt
+            description: "ETL load timestamp"
+            data_type: timestamp
+
+      - name: ptnr_fctn
+        description: "Partner function data linking customers to sales organizations"
+        columns:
+          - name: cust_nbr
+            description: "Customer number - Foreign Key to CUST_MASTER"
+            data_type: nvarchar2(10)
+            tests:
+              - not_null
+              - relationships:
+                  to: source('stg_mdg_cust', 'cust_master')
+                  field: cust_nbr
+          - name: sales_org_id
+            description: "Sales organization ID"
+            data_type: nvarchar2(4)
+            tests:
+              - not_null
+          - name: dstrbtn_chnl
+            description: "Distribution channel"
+            data_type: nvarchar2(2)
+            tests:
+              - not_null
+          - name: division
+            description: "Division"
+            data_type: nvarchar2(2)
+            tests:
+              - not_null
+          - name: ptnr_fctn_id
+            description: "Partner function ID"
+            data_type: nvarchar2(2)
+            tests:
+              - not_null
+          - name: ptnr_cntr
+            description: "Partner counter"
+            data_type: number(3,0)
+            tests:
+              - not_null
+          - name: ptnr_cust_nbr
+            description: "Partner customer number"
+            data_type: nvarchar2(10)
+          - name: etl_load_dt
+            description: "ETL load timestamp"
+            data_type: timestamp
+
+      - name: cust_adrs
+        description: "Customer address information with validity periods"
+        columns:
+          - name: adrs_nbr
+            description: "Address number - Primary Key"
+            data_type: varchar2(10)
+            tests:
+              - not_null
+          - name: vld_frm_dt
+            description: "Valid from date - Primary Key"
+            data_type: date
+            tests:
+              - not_null
+          - name: vld_to_dt
+            description: "Valid to date"
+            data_type: date
+          - name: cust_nbr
+            description: "Customer number - Foreign Key"
+            data_type: varchar2(10)
+            tests:
+              - relationships:
+                  to: source('stg_mdg_cust', 'cust_master')
+                  field: cust_nbr
+          - name: name_1
+            description: "Customer name line 1"
+            data_type: varchar2(40)
+          - name: name_2
+            description: "Customer name line 2"
+            data_type: varchar2(40)
+          - name: name_3
+            description: "Customer name line 3"
+            data_type: varchar2(40)
+          - name: name_4
+            description: "Customer name line 4"
+            data_type: varchar2(40)
+          - name: city
+            description: "City name"
+            data_type: varchar2(40)
+          - name: region_key
+            description: "Region key"
+            data_type: varchar2(3)
+          - name: po_cd
+            description: "Postal code"
+            data_type: varchar2(10)
+          - name: strt_1
+            description: "Street address line 1"
+            data_type: varchar2(60)
+          - name: strt_2
+            description: "Street address line 2"
+            data_type: varchar2(40)
+          - name: strt_3
+            description: "Street address line 3"
+            data_type: varchar2(40)
+          - name: etl_load_dt
+            description: "ETL load timestamp"
+            data_type: timestamp
+
+  - name: target_system
+    description: "Target system for lookups"
+    tables:
+      - name: bus_ptnr_ids
+        description: "Business partner IDs lookup table"
+        columns:
+          - name: bus_ptnr_nbr
+            description: "Business partner number"
+            data_type: nvarchar2(10)
+          - name: bus_id_tp
+            description: "Business ID type"
+            data_type: nvarchar2(6)
+          - name: bus_id_nbr
+            description: "Business ID number"
+            data_type: nvarchar2(60)
+          - name: etl_load_dt
+            description: "ETL load timestamp"
+            data_type: timestamp
+# --- From wf_AP_FF_CITIBANK_VCA.XML ---
+
+sources:
+  - name: t_ap
+    description: "Accounts Payable staging database containing Citibank VCA data"
+    database: "{{ env_var('DBT_SOURCE_DATABASE', 'T_AP') }}"
+    schema: "{{ env_var('DBT_SOURCE_SCHEMA', 'T_AP') }}"
+    tables:
+      - name: t_ap_citibank_vca
+        description: "Citibank Virtual Card Account staging table containing payment and card information"
+        columns:
+          - name: action_type
+            description: "Type of action to be performed on the record"
+            data_type: varchar2(255)
+          - name: record_id
+            description: "Unique identifier for the record"
+            data_type: varchar2(255)
+          - name: issuer_id
+            description: "Identifier for the card issuer"
+            data_type: varchar2(255)
+          - name: ica_nbr
+            description: "ICA (Interbank Card Association) number"
+            data_type: varchar2(255)
+          - name: bank_nbr
+            description: "Bank identification number"
+            data_type: varchar2(255)
+          - name: user_name
+            description: "Username associated with the virtual card"
+            data_type: varchar2(255)
+          - name: request_id
+            description: "Unique request identifier"
+            data_type: varchar2(255)
+          - name: min_purchase_amt
+            description: "Minimum purchase amount allowed"
+            data_type: varchar2(255)
+          - name: max_purchase_amt
+            description: "Maximum purchase amount allowed"
+            data_type: varchar2(255)
+          - name: purchase_currency
+            description: "Currency code for purchases"
+            data_type: varchar2(255)
+          - name: purchase_type
+            description: "Type of purchase allowed"
+            data_type: varchar2(255)
+          - name: v_card_alias
+            description: "Virtual card alias name"
+            data_type: varchar2(255)
+          - name: supplier_name
+            description: "Name of the supplier/merchant"
+            data_type: varchar2(255)
+          - name: supplier_email
+            description: "Email address of the supplier"
+            data_type: varchar2(255)
+          - name: multi_use
+            description: "Flag indicating if card can be used multiple times"
+            data_type: varchar2(255)
+          - name: valid_from
+            description: "Start date for card validity"
+            data_type: date
+          - name: valid_to
+            description: "End date for card validity"
+            data_type: date
+          - name: valid_for
+            description: "Duration description for card validity"
+            data_type: varchar2(255)
+          - name: cdf_payment_number
+            description: "CDF payment reference number"
+            data_type: varchar2(255)
+          - name: cdf_payee_number
+            description: "CDF payee identification number"
+            data_type: varchar2(255)
+          - name: cdf_payment_amount
+            description: "CDF payment amount"
+            data_type: varchar2(255)
+          - name: cdf_payment_date
+            description: "Date of CDF payment"
+            data_type: date
+          - name: cdf_payee_name
+            description: "Name of the CDF payee"
+            data_type: varchar2(255)
+          - name: etl_load_dte
+            description: "ETL load timestamp"
+            data_type: timestamp
+        # Freshness check - data should be loaded daily
+        freshness:
+          warn_after: {count: 1, period: day}
+          error_after: {count: 2, period: day}
+        # Loaded at table level
+        loaded_at_field: etl_load_dte
+# --- From wf_BL_FF_ZJ_JOURNALS.XML ---
+
+sources:
+  - name: jde_crpdta
+    description: "JDE CRPDTA database tables"
+    database: "{{ var('jde_database', 'CRPDTA') }}"
+    schema: "{{ var('jde_schema', 'CRPDTA') }}"
+    tables:
+      - name: f0011
+        description: "JDE Account Balances table"
+        columns:
+          - name: icicut
+            description: "Currency Code From"
+            data_type: varchar(2)
+          - name: icicu
+            description: "Currency Code"
+            data_type: number(15,0)
+          - name: icist
+            description: "Item Status"
+            data_type: varchar(1)
+          - name: icame
+            description: "Amount Entered"
+            data_type: number(15,0)
+
+      - name: f0911
+        description: "JDE Account Ledger table"
+        columns:
+          - name: glkco
+            description: "Company"
+            data_type: varchar(5)
+            tests:
+              - not_null
+          - name: gldct
+            description: "Document Type"
+            data_type: varchar(2)
+            tests:
+              - not_null
+          - name: gldoc
+            description: "Document Number"
+            data_type: number(15,0)
+            tests:
+              - not_null
+          - name: gldgj
+            description: "GL Date"
+            data_type: number(6,0)
+            tests:
+              - not_null
+          - name: gljeln
+            description: "Journal Entry Line Number"
+            data_type: number(15,0)
+            tests:
+              - not_null
+          - name: gllt
+            description: "Ledger Type"
+            data_type: varchar(2)
+            tests:
+              - not_null
+          - name: glpost
+            description: "Posted Code"
+            data_type: varchar(1)
+          - name: glicu
+            description: "Batch Number"
+            data_type: number(15,0)
+          - name: glicut
+            description: "Batch Type"
+            data_type: varchar(2)
+          - name: gldicj
+            description: "Batch Date"
+            data_type: number(6,0)
+          - name: glexa
+            description: "Explanation Alpha"
+            data_type: varchar(30)
+          - name: glcrcd
+            description: "Currency Code"
+            data_type: varchar(3)
+          - name: glcrrm
+            description: "Foreign/Domestic"
+            data_type: varchar(1)
+          - name: gltorg
+            description: "User ID"
+            data_type: varchar(10)
+          - name: glextl
+            description: "Line Extension Code"
+            data_type: varchar(2)
+          - name: glani
+            description: "Account Number"
+            data_type: varchar(29)
+          - name: glco
+            description: "Company"
+            data_type: varchar(5)
+          - name: glaa
+            description: "Amount"
+            data_type: number(15,0)
+          - name: glexr
+            description: "Explanation Remark"
+            data_type: varchar(30)
+          - name: glsblt
+            description: "Subledger Type"
+            data_type: varchar(1)
+          - name: glsbl
+            description: "Subledger"
+            data_type: varchar(8)
+          - name: glre
+            description: "Reverse/Void"
+            data_type: varchar(1)
+          - name: glrcnd
+            description: "Reconciled Code"
+            data_type: varchar(1)
+          - name: glpo
+            description: "Purchase Order"
+            data_type: varchar(8)
+          - name: glasid
+            description: "Asset Number"
+            data_type: varchar(25)
+          - name: gluser
+            description: "User ID"
+            data_type: varchar(10)
+          - name: glupmj
+            description: "Date Updated"
+            data_type: number(6,0)
+          - name: glupmt
+            description: "Time Last Updated"
+            data_type: number(15,0)
+          - name: gltorg
+            description: "Originating User"
+            data_type: varchar(10)
+
+      - name: f0901
+        description: "JDE Account Master table"
+        columns:
+          - name: gmaid
+            description: "Account ID"
+            data_type: varchar(8)
+            tests:
+              - not_null
+              - unique
+          - name: gmdl01
+            description: "Account Description"
+            data_type: varchar(30)
+
+  - name: jde_lookup
+    description: "JDE lookup tables"
+    database: "{{ var('jde_database', 'CRPDTA') }}"
+    schema: "{{ var('jde_schema', 'CRPDTA') }}"
+    tables:
+      - name: f0092
+        description: "JDE User Profile table"
+        columns:
+          - name: uluser
+            description: "User ID"
+            data_type: varchar(10)
+          - name: ulan8
+            description: "Address Number"
+            data_type: number(15,0)
+
+      - name: f01151
+        description: "JDE Electronic Address table"
+        columns:
+          - name: eaan8
+            description: "Address Number"
+            data_type: number(15,0)
+          - name: eaidln
+            description: "ID Line Number"
+            data_type: number(15,0)
+          - name: eaetp
+            description: "Electronic Address Type"
+            data_type: varchar(4)
+          - name: eaemal
+            description: "Email Address"
+            data_type: varchar(256)
+
+  - name: staging_infa
+    description: "Informatica staging tables"
+    database: "{{ var('staging_database', 'STAGING') }}"
+    schema: "{{ var('staging_schema', 'STAGING') }}"
+    tables:
+      - name: s_zj_journals
+        description: "Staging table for ZJ Journals"
+        columns:
+          - name: f0911_gldct
+            description: "Document Type"
+            data_type: varchar(2)
+          - name: f0911_gldoc
+            description: "Document Number"
+            data_type: number(15,0)
+          - name: f0911_glkco
+            description: "Company"
+            data_type: varchar(5)
+          - name: f0911_gldgj
+            description: "GL Date"
+            data_type: number(6,0)
+          - name: f0911_gllt
+            description: "Ledger Type"
+            data_type: varchar(2)
+          - name: f0911_gljeln
+            description: "Journal Entry Line Number"
+            data_type: number(15,0)
+
+  - name: blackline_files
+    description: "Blackline flat file source"
+    tables:
+      - name: ff_bl_zj_journals_src
+        description: "Blackline journals flat file source"
+        columns:
+          - name: batch_number
+            description: "Batch Number"
+            data_type: number(15,0)
+          - name: batch_type
+            description: "Batch Type"
+            data_type: varchar(2)
+          - name: document_type
+            description: "Document Type"
+            data_type: varchar(2)
+          - name: document_number
+            description: "Document Number"
+            data_type: number(15,0)
+          - name: document_company
+            description: "Document Company"
+            data_type: varchar(5)
+          - name: gl_date
+            description: "GL Date"
+            data_type: number(6,0)
+          - name: currency
+            description: "Currency"
+            data_type: varchar(3)
+          - name: foreign_domestic
+            description: "Foreign/Domestic Flag"
+            data_type: varchar(1)
+          - name: batch_date
+            description: "Batch Date"
+            data_type: number(6,0)
+          - name: amount_entered
+            description: "Amount Entered"
+            data_type: number(15,2)
+          - name: batch_status
+            description: "Batch Status"
+            data_type: varchar(1)
+          - name: gltorg_user_id
+            description: "Originating User ID"
+            data_type: varchar(10)
+          - name: explanation_alpha
+            description: "Explanation Alpha"
+            data_type: varchar(30)
+          - name: ledger_type
+            description: "Ledger Type"
+            data_type: varchar(2)
+          - name: journal_entry_line_number
+            description: "Journal Entry Line Number"
+            data_type: number(15,0)
+          - name: line_extension_code
+            description: "Line Extension Code"
+            data_type: varchar(2)
+          - name: account_number
+            description: "Account Number"
+            data_type: varchar(29)
+          - name: account_description
+            description: "Account Description"
+            data_type: varchar(30)
+          - name: company
+            description: "Company"
+            data_type: varchar(5)
+          - name: amount
+            description: "Amount"
+            data_type: number(15,2)
+          - name: explanation_remark
+            description: "Explanation Remark"
+            data_type: varchar(30)
+          - name: subledger_type
+            description: "Subledger Type"
+            data_type: varchar(1)
+          - name: subledger
+            description: "Subledger"
+            data_type: varchar(8)
+          - name: g_l_posted_code
+            description: "GL Posted Code"
+            data_type: varchar(1)
+          - name: reverse_void
+            description: "Reverse/Void"
+            data_type: varchar(1)
+          - name: reconciled_code
+            description: "Reconciled Code"
+            data_type: varchar(1)
+          - name: purchase_order
+            description: "Purchase Order"
+            data_type: varchar(8)
+          - name: asset_number
+            description: "Asset Number"
+            data_type: varchar(25)
+          - name: gluser_user_id
+            description: "GL User ID"
+            data_type: varchar(10)
+          - name: date_updated
+            description: "Date Updated"
+            data_type: number(6,0)
+          - name: time_last_updated
+            description: "Time Last Updated"
+            data_type: number(15,0)
+          - name: email
+            description: "Email Address"
+            data_type: varchar(256)
+          - name: filename
+            description: "Source File Name"
+            data_type: varchar(255)
+# --- From wf_BL_FF_ZJ_JOURNALS_STG.XML ---
+
+sources:
+  - name: crpdta
+    description: "JD Edwards source system tables"
+    database: "{{ var('source_database', 'CRPDTA') }}"
+    schema: "{{ var('source_schema', 'CRPDTA') }}"
+    tables:
+      - name: f0901
+        description: "Account Master table - contains chart of accounts information"
+        columns:
+          - name: gmco
+            description: "Company code"
+            data_type: nchar(5)
+          - name: gmaid
+            description: "Account ID - Primary Key"
+            data_type: nchar(8)
+            tests:
+              - not_null
+          - name: gmmcu
+            description: "Business unit"
+            data_type: nchar(12)
+          - name: gmobj
+            description: "Object account"
+            data_type: nchar(6)
+          - name: gmsub
+            description: "Subsidiary account"
+            data_type: nchar(8)
+          - name: gmdl01
+            description: "Account description"
+            data_type: nchar(30)
+          - name: gmlda
+            description: "Line of business"
+            data_type: nchar(1)
+
+      - name: f0911
+        description: "Account Ledger table - contains journal entry details"
+        columns:
+          - name: glkco
+            description: "Company code - Primary Key"
+            data_type: nchar(5)
+            tests:
+              - not_null
+          - name: gldct
+            description: "Document type - Primary Key"
+            data_type: nchar(2)
+            tests:
+              - not_null
+          - name: gldoc
+            description: "Document number - Primary Key"
+            data_type: number(15,0)
+            tests:
+              - not_null
+          - name: gldgj
+            description: "GL date - Primary Key"
+            data_type: number(6,0)
+            tests:
+              - not_null
+          - name: gljeln
+            description: "Journal entry line number - Primary Key"
+            data_type: number(15,0)
+            tests:
+              - not_null
+          - name: glextl
+            description: "Line extension - Primary Key"
+            data_type: nchar(2)
+            tests:
+              - not_null
+          - name: gllt
+            description: "Ledger type - Primary Key"
+            data_type: nchar(2)
+            tests:
+              - not_null
+          - name: glicu
+            description: "Item number"
+            data_type: number(15,0)
+          - name: glicut
+            description: "Item unit of measure"
+            data_type: nchar(2)
+          - name: gldicj
+            description: "Date - invoice"
+            data_type: number(6,0)
+          - name: glco
+            description: "Company"
+            data_type: nchar(5)
+          - name: glani
+            description: "Account number"
+            data_type: nchar(29)
+          - name: glaa
+            description: "Amount"
+            data_type: number(15,2)
+          - name: glexa
+            description: "Explanation - alpha"
+            data_type: nchar(30)
+          - name: glexr
+            description: "Explanation - remark"
+            data_type: nchar(30)
+          - name: glcrcd
+            description: "Currency code"
+            data_type: nchar(3)
+          - name: glcrrm
+            description: "Currency rate method"
+            data_type: nchar(1)
+          - name: gltorg
+            description: "User ID"
+            data_type: nchar(10)
+          - name: glpost
+            description: "Posted code"
+            data_type: nchar(1)
+          - name: glre
+            description: "Reverse entry flag"
+            data_type: nchar(1)
+          - name: glrcnd
+            description: "Reconciled code"
+            data_type: nchar(1)
+          - name: glpo
+            description: "Purchase order"
+            data_type: nchar(8)
+          - name: glasid
+            description: "Asset number"
+            data_type: nchar(25)
+          - name: gluser
+            description: "User ID"
+            data_type: nchar(10)
+          - name: glupmj
+            description: "Date updated"
+            data_type: number(6,0)
+          - name: glupmt
+            description: "Time last updated"
+            data_type: number(15,0)
+          - name: glsbl
+            description: "Subledger"
+            data_type: nchar(8)
+          - name: glsblt
+            description: "Subledger type"
+            data_type: nchar(1)
+
+      - name: f0011
+        description: "Currency Information table"
+        columns:
+          - name: icicut
+            description: "Currency unit type - Primary Key"
+            data_type: nchar(2)
+            tests:
+              - not_null
+          - name: icicu
+            description: "Currency unit - Primary Key"
+            data_type: number(15,0)
+            tests:
+              - not_null
+          - name: icist
+            description: "Status"
+            data_type: nchar(1)
+          - name: icame
+            description: "Amount entered"
+            data_type: number(15,2)
+
+  - name: lookup_tables
+    description: "Lookup tables for user and email information"
+    database: "{{ var('source_database', 'CRPDTA') }}"
+    schema: "{{ var('source_schema', 'CRPDTA') }}"
+    tables:
+      - name: f0092
+        description: "User Profile table"
+        columns:
+          - name: uluser
+            description: "User ID"
+            data_type: nchar(10)
+          - name: ulan8
+            description: "Address number"
+            data_type: number(15,0)
+
+      - name: f01151
+        description: "Electronic Address table"
+        columns:
+          - name: eaan8
+            description: "Address number"
+            data_type: number(15,0)
+          - name: eaidln
+            description: "ID line number"
+            data_type: number(15,0)
+          - name: eaetp
+            description: "Electronic address type"
+            data_type: nchar(4)
+          - name: eaemal
+            description: "Email address"
+            data_type: nchar(256)
+# --- Chunk 2 ---
+version: 2
+
+sources:
+  - name: jde_source
+    description: "JD Edwards source tables for journal processing"
+    schema: "{{ var('source_schema') }}"
+    tables:
+      - name: f0911
+        description: "Account Balances table - contains journal entry details"
+        columns:
+          - name: glicu
+            description: "Batch Number"
+            data_type: number
+          - name: glicut
+            description: "Batch Type"
+            data_type: varchar2
+          - name: gldct
+            description: "Document Type"
+            data_type: varchar2
+          - name: gldoc
+            description: "Document Number"
+            data_type: number
+          - name: glkco
+            description: "Document Company"
+            data_type: varchar2
+          - name: gldgj
+            description: "GL Date"
+            data_type: number
+          - name: gljeln
+            description: "Journal Entry Line Number"
+            data_type: number
+          - name: gllt
+            description: "Ledger Type"
+            data_type: varchar2
+          - name: glpost
+            description: "GL Posted Code"
+            data_type: varchar2
+          - name: glco
+            description: "Company"
+            data_type: varchar2
+          - name: glani
+            description: "Account Number"
+            data_type: varchar2
+          - name: glcrcd
+            description: "Currency Code"
+            data_type: varchar2
+          - name: glaa
+            description: "Amount"
+            data_type: number
+          - name: glre
+            description: "Reverse/Void Flag"
+            data_type: varchar2
+          - name: glexa
+            description: "Explanation Alpha"
+            data_type: varchar2
+          - name: glexr
+            description: "Explanation Remark"
+            data_type: varchar2
+          - name: glsbl
+            description: "Subledger"
+            data_type: varchar2
+          - name: glsblt
+            description: "Subledger Type"
+            data_type: varchar2
+          - name: glasid
+            description: "Asset Number"
+            data_type: varchar2
+          - name: glrcnd
+            description: "Reconciled Code"
+            data_type: varchar2
+          - name: glpo
+            description: "Purchase Order"
+            data_type: varchar2
+          - name: gluser
+            description: "User ID"
+            data_type: varchar2
+          - name: glupmj
+            description: "Date Updated"
+            data_type: number
+          - name: glupmt
+            description: "Time Last Updated"
+            data_type: number
+          - name: glcrrm
+            description: "Foreign/Domestic Flag"
+            data_type: varchar2
+          - name: gldicj
+            description: "Batch Date"
+            data_type: number
+          - name: gltorg
+            description: "Originating User ID"
+            data_type: varchar2
+          - name: glextl
+            description: "Line Extension Code"
+            data_type: varchar2
+
+      - name: f0901
+        description: "Account Master table - contains account descriptions"
+        columns:
+          - name: gmaid
+            description: "Account ID"
+            data_type: varchar2
+          - name: gmdl01
+            description: "Account Description"
+            data_type: varchar2
+
+      - name: f0011
+        description: "Batch Control Records table"
+        columns:
+          - name: icicu
+            description: "Batch Number"
+            data_type: number
+          - name: icicut
+            description: "Batch Type"
+            data_type: varchar2
+          - name: icist
+            description: "Batch Status"
+            data_type: varchar2
+          - name: icame
+            description: "Amount Entered"
+            data_type: number
+
+      - name: f0092
+        description: "User Profile table"
+        columns:
+          - name: uluser
+            description: "User ID"
+            data_type: varchar2
+          - name: ulan8
+            description: "Address Number"
+            data_type: number
+
+      - name: f01151
+        description: "Electronic Address table"
+        columns:
+          - name: eaan8
+            description: "Address Number"
+            data_type: number
+          - name: eaidln
+            description: "ID Line Number"
+            data_type: number
+          - name: eaetp
+            description: "Electronic Address Type"
+            data_type: varchar2
+          - name: eaemal
+            description: "Email Address"
+            data_type: varchar2
+
+  - name: staging_tables
+    description: "Staging tables for duplicate checking"
+    schema: "{{ var('target_schema') }}"
+    tables:
+      - name: s_zj_journals
+        description: "Staging table for journal entries"
+        columns:
+          - name: f0911_gldct
+            description: "Document Type"
+          - name: f0911_gldoc
+            description: "Document Number"
+          - name: f0911_glkco
+            description: "Document Company"
+          - name: f0911_gljeln
+            description: "Journal Entry Line Number"
+          - name: f0911_gllt
+            description: "Ledger Type"
+# --- From wf_CM_Z1_DAILY_SALES_FEED.XML ---
+
+sources:
+  - name: t_cm
+    description: "Commission Management source system tables"
+    database: "{{ var('db_connection_stg') }}"
+    schema: t_cm
+    tables:
+      - name: t_cm_z1_sales
+        description: "Daily sales data for Z1 business segment from Commission Management system"
+        identifier: "{{ var('src_table_name', 'T_CM_Z1_SALES') }}"
+        columns:
+          - name: t_cm_z1_sales_id
+            description: "Primary key for sales record"
+            data_type: number
+            tests:
+              - not_null
+              - unique
+          - name: ordernumber
+            description: "Order number"
+            data_type: varchar2
+          - name: lineitemnumber
+            description: "Line item number within order"
+            data_type: varchar2
+          - name: invoicenumber
+            description: "Invoice number"
+            data_type: varchar2
+          - name: invoicedate
+            description: "Invoice date"
+            data_type: date
+          - name: sourcesystem
+            description: "Source system identifier"
+            data_type: varchar2
+          - name: businesssegment
+            description: "Business segment code"
+            data_type: varchar2
+          - name: businesssegmentdescription
+            description: "Business segment description"
+            data_type: varchar2
+          - name: surgerydate
+            description: "Surgery date"
+            data_type: date
+          - name: customernumber
+            description: "Customer number"
+            data_type: varchar2
+          - name: customernumbershipto
+            description: "Ship-to customer number"
+            data_type: varchar2
+          - name: customername
+            description: "Customer name"
+            data_type: varchar2
+          - name: txncustomernumber
+            description: "Transaction customer number"
+            data_type: varchar2
+          - name: txncustomername
+            description: "Transaction customer name"
+            data_type: varchar2
+          - name: customerpattern
+            description: "Customer pattern code"
+            data_type: number
+          - name: customerpo
+            description: "Customer purchase order number"
+            data_type: varchar2
+          - name: surgeonid
+            description: "Surgeon identifier"
+            data_type: varchar2
+          - name: surgeonname
+            description: "Surgeon name"
+            data_type: varchar2
+          - name: txnsurgeonid
+            description: "Transaction surgeon identifier"
+            data_type: varchar2
+          - name: txnsurgeonname
+            description: "Transaction surgeon name"
+            data_type: varchar2
+          - name: itemnumber
+            description: "Item number"
+            data_type: varchar2
+          - name: itemdescription
+            description: "Item description"
+            data_type: varchar2
+          - name: salesadjustmentname
+            description: "Sales adjustment name"
+            data_type: varchar2
+          - name: salesadjustmenttype
+            description: "Sales adjustment type"
+            data_type: varchar2
+          - name: rafinvoicedate
+            description: "RAF invoice date"
+            data_type: date
+          - name: itemclass
+            description: "Item class code"
+            data_type: varchar2
+          - name: itemclassdescription
+            description: "Item class description"
+            data_type: varchar2
+          - name: unitsaleprice
+            description: "Unit sale price"
+            data_type: number
+          - name: quantityshipped
+            description: "Quantity shipped"
+            data_type: number
+          - name: unitlistprice
+            description: "Unit list price"
+            data_type: number
+          - name: county
+            description: "County code"
+            data_type: varchar2
+          - name: txncounty
+            description: "Transaction county code"
+            data_type: varchar2
+          - name: countydescription
+            description: "County description"
+            data_type: varchar2
+          - name: territoryid
+            description: "Territory identifier"
+            data_type: varchar2
+          - name: trxterritoryid
+            description: "Transaction territory identifier"
+            data_type: varchar2
+          - name: trxterritoryname
+            description: "Transaction territory name"
+            data_type: varchar2
+          - name: trxsalesrepnumber
+            description: "Transaction sales rep number"
+            data_type: varchar2
+          - name: trxsalesrepname
+            description: "Transaction sales rep name"
+            data_type: varchar2
+          - name: contractnumber
+            description: "Contract number"
+            data_type: varchar2
+          - name: contractname
+            description: "Contract name"
+            data_type: varchar2
+          - name: pricingpenaltyproration
+            description: "Pricing penalty proration amount"
+            data_type: number
+          - name: commissioncode
+            description: "Commission code"
+            data_type: varchar2
+          - name: ordertype
+            description: "Order type"
+            data_type: varchar2
+          - name: transferordertype
+            description: "Transfer order type"
+            data_type: varchar2
+          - name: transactiontypecode
+            description: "Transaction type code"
+            data_type: varchar2
+          - name: costcenter
+            description: "Cost center"
+            data_type: varchar2
+          - name: z_to_zindicator
+            description: "Z to Z indicator"
+            data_type: varchar2
+          - name: transportationdistributor
+            description: "Transportation distributor amount"
+            data_type: number
+          - name: transportationzimmer
+            description: "Transportation Zimmer amount"
+            data_type: number
+          - name: acctsreceivablevalue
+            description: "Accounts receivable value"
+            data_type: number
+          - name: customerfreight
+            description: "Customer freight amount"
+            data_type: number
+          - name: restockfee
+            description: "Restock fee amount"
+            data_type: number
+          - name: adjdetailreporttablenum
+            description: "Adjustment detail report table number"
+            data_type: varchar2
+          - name: specialcharges
+            description: "Special charges amount"
+            data_type: number
+          - name: salestax
+            description: "Sales tax amount"
+            data_type: number
+          - name: othertaxes
+            description: "Other taxes amount"
+            data_type: number
+          - name: transactionheader
+            description: "Transaction header"
+            data_type: varchar2
+          - name: customertype
+            description: "Customer type"
+            data_type: varchar2
+          - name: etl_md5
+            description: "ETL MD5 hash for change detection"
+            data_type: varchar2
+          - name: etl_updt_flg
+            description: "ETL update flag"
+            data_type: varchar2
+          - name: etl_create_dte
+            description: "ETL create date"
+            data_type: date
+          - name: etl_load_dte
+            description: "ETL load timestamp"
+            data_type: timestamp
+          - name: shipviadesc
+            description: "Ship via description"
+            data_type: varchar2
+          - name: sms_case_number
+            description: "SMS case number"
+            data_type: number
+          - name: trailerrecord_yn
+            description: "Trailer record indicator (Y/N)"
+            data_type: varchar2
+# --- From wf_DI_ITEM_MTRL_MASTER.XML ---
+
+sources:
+  - name: xml_source
+    description: "XML source files for material master data"
+    tables:
+      - name: xml_md_material_attr_txt
+        description: "Material attributes and descriptions from XML"
+        columns:
+          - name: product
+            description: "Product/Material number"
+            data_type: string
+          - name: product_type
+            description: "Product type"
+            data_type: string
+          - name: product_description
+            description: "Product description"
+            data_type: string
+          - name: language
+            description: "Language key"
+            data_type: string
+          - name: creation_date
+            description: "Creation date"
+            data_type: timestamp
+          - name: time_of_creation
+            description: "Creation time"
+            data_type: timestamp
+          - name: last_change_date
+            description: "Last change date"
+            data_type: timestamp
+          - name: last_change_date_time
+            description: "Last change time"
+            data_type: timestamp
+          - name: created_by_user
+            description: "Created by user"
+            data_type: string
+          - name: last_changed_by_user
+            description: "Last changed by user"
+            data_type: string
+          - name: is_marked_for_deletion
+            description: "Deletion flag"
+            data_type: integer
+
+  - name: lookup_tables
+    description: "Lookup tables for material characteristics"
+    tables:
+      - name: material_characteristics
+        description: "Material characteristics lookup table"
+        columns:
+          - name: key_of_obj
+            description: "Object key (Material number)"
+            data_type: string
+          - name: char_value
+            description: "Characteristic value"
+            data_type: string
+          - name: characteristic_name
+            description: "Characteristic name"
+            data_type: string
+
+  - name: target_tables
+    description: "Target tables for material master"
+    tables:
+      - name: material_master
+        description: "Material master target table"
+        columns:
+          - name: mtrl_nbr
+            description: "Material number"
+            data_type: string
+          - name: src_md5
+            description: "Source MD5 hash"
+            data_type: string
+          - name: tgt_md5
+            description: "Target MD5 hash"
+            data_type: string
+# --- Chunk 3 ---
+version: 2
+
+sources:
+  - name: source_system
+    description: "Source system for Material Master data"
+    tables:
+      - name: material_source
+        description: "Source table for material master data"
+        columns:
+          - name: product
+            description: "Material number/Product ID"
+            data_type: varchar(40)
+          - name: matergrppckgmater
+            description: "Material group packaging material"
+            data_type: varchar(4)
+          - name: productgroup
+            description: "Product group"
+            data_type: varchar(9)
+          - name: weightunit
+            description: "Weight unit"
+            data_type: varchar(3)
+          - name: volumeunit
+            description: "Volume unit"
+            data_type: varchar(3)
+          - name: materialvolume
+            description: "Material volume"
+            data_type: decimal(13,3)
+
+  - name: lookup_tables
+    description: "Lookup tables for material attributes"
+    tables:
+      - name: ibp_scope_lookup
+        description: "IBP Scope indicator lookup"
+        columns:
+          - name: key_of_obj
+            description: "Lookup key (Item Number)"
+            data_type: varchar(90)
+          - name: char_value
+            description: "IBP Scope value"
+            data_type: varchar(70)
+      
+      - name: ce_mark_lookup
+        description: "CE Mark indicator lookup"
+        columns:
+          - name: key_of_obj
+            description: "Lookup key (Item Number)"
+            data_type: varchar(90)
+          - name: char_value
+            description: "CE Mark value"
+            data_type: varchar(1)
+      
+      - name: fda_prod_cd_lookup
+        description: "FDA Product Code lookup"
+        columns:
+          - name: key_of_obj
+            description: "Lookup key (Item Number)"
+            data_type: varchar(90)
+          - name: char_value
+            description: "FDA Product Code"
+            data_type: varchar(70)
+      
+      - name: mtrl_master_lookup
+        description: "Material Master lookup for existing records"
+        columns:
+          - name: mtrl_nbr
+            description: "Material number"
+            data_type: varchar(40)
+          - name: pkgng_mtrl_grp
+            description: "Packaging material group"
+            data_type: varchar(4)
+          - name: etl_load_dt
+            description: "ETL load date"
+            data_type: timestamp
+
+  - name: target_system
+    description: "Target system tables"
+    tables:
+      - name: mtrl_master
+        description: "Material Master target table"
+        columns:
+          - name: mtrl_nbr
+            description: "Material number (Primary Key)"
+            data_type: varchar(40)
+          - name: pkgng_mtrl_grp
+            description: "Packaging material group"
+            data_type: varchar(4)
+          - name: etl_load_dt
+            description: "ETL load timestamp"
+            data_type: timestamp
+# --- Chunk 4 ---
+version: 2
+
+sources:
+  - name: sap_source
+    description: "SAP source system for material master data"
+    schema: sap_raw
+    tables:
+      - name: material_master
+        description: "Material master data from SAP"
+        columns:
+          - name: Product
+            description: "Material/Product number"
+            data_type: varchar(40)
+          - name: MaterGrpPckgMater
+            description: "Material group for packaging materials"
+            data_type: varchar(4)
+          - name: ProductGroup
+            description: "Product group"
+            data_type: varchar(9)
+          - name: WeightUnit
+            description: "Weight unit"
+            data_type: varchar(3)
+          - name: VolumeUnit
+            description: "Volume unit"
+            data_type: varchar(3)
+          - name: MaterialVolume
+            description: "Material volume"
+            data_type: decimal(13,3)
+          - name: SizeOrDimensionText
+            description: "Size/dimension text"
+            data_type: varchar(32)
+          - name: ProductHierarchy
+            description: "Product hierarchy"
+            data_type: varchar(18)
+          - name: ProductOldID
+            description: "Old product ID"
+            data_type: varchar(40)
+          - name: NetWeight
+            description: "Net weight"
+            data_type: decimal(13,3)
+          - name: GrossWeight
+            description: "Gross weight"
+            data_type: decimal(13,3)
+          - name: BaseUnit
+            description: "Base unit of measure"
+            data_type: varchar(3)
+          - name: ProductDescription
+            description: "Product description"
+            data_type: varchar(40)
+          - name: CreatedByUser
+            description: "Created by user"
+            data_type: varchar(12)
+          - name: CreationDate
+            description: "Creation date"
+            data_type: timestamp
+          - name: TimeOfCreation
+            description: "Time of creation"
+            data_type: timestamp
+          - name: LastChangedByUser
+            description: "Last changed by user"
+            data_type: varchar(12)
+          - name: LastChangeDate
+            description: "Last change date"
+            data_type: timestamp
+          - name: LastChangeDateTime
+            description: "Last change date time"
+            data_type: timestamp
+          - name: IsBatchManagementRequired
+            description: "Batch management required flag"
+            data_type: smallint
+          - name: IsMarkedForDeletion
+            description: "Deletion flag"
+            data_type: smallint
+          - name: UnitSpecificProductWidth
+            description: "Unit specific product width"
+            data_type: decimal(13,3)
+
+  - name: lookup_tables
+    description: "Lookup tables for material attributes"
+    schema: lookup_data
+    tables:
+      - name: danger_goods_lookup
+        description: "Dangerous goods indicator lookup"
+      - name: material_attributes_lookup
+        description: "Material attributes lookup table"
+# --- Chunk 5 ---
+version: 2
+
+sources:
+  - name: xml_source
+    description: "XML source files containing material master data"
+    tables:
+      - name: xml_md_material_attr_txt
+        description: "XML Material Attributes and Text data"
+        columns:
+          - name: product
+            description: "Product identifier"
+            data_type: varchar(40)
+          - name: product_type
+            description: "Product type code"
+            data_type: varchar(4)
+          - name: cross_plant_status
+            description: "Cross plant status"
+            data_type: varchar(2)
+          - name: cross_plant_status_validity_date
+            description: "Validity date for cross plant status"
+            data_type: timestamp
+          - name: creation_date
+            description: "Record creation date"
+            data_type: timestamp
+          - name: created_by_user
+            description: "User who created the record"
+            data_type: varchar(12)
+          - name: last_change_date
+            description: "Last change date"
+            data_type: timestamp
+          - name: last_changed_by_user
+            description: "User who last changed the record"
+            data_type: varchar(12)
+          - name: is_marked_for_deletion
+            description: "Deletion flag"
+            data_type: smallint
+          - name: product_old_id
+            description: "Old product identifier"
+            data_type: varchar(40)
+          - name: gross_weight
+            description: "Gross weight"
+            data_type: decimal(18,9)
+          - name: purchase_order_quantity_unit
+            description: "Purchase order quantity unit"
+            data_type: varchar(3)
+          - name: weight_unit
+            description: "Weight unit of measure"
+            data_type: varchar(3)
+          - name: net_weight
+            description: "Net weight"
+            data_type: decimal(18,9)
+          - name: country_of_origin
+            description: "Country of origin"
+            data_type: varchar(3)
+          - name: product_group
+            description: "Product group"
+            data_type: varchar(9)
+          - name: base_unit
+            description: "Base unit of measure"
+            data_type: varchar(3)
+          - name: item_category_group
+            description: "Item category group"
+            data_type: varchar(4)
+          - name: product_hierarchy
+            description: "Product hierarchy"
+            data_type: varchar(18)
+          - name: division
+            description: "Division"
+            data_type: varchar(2)
+          - name: varbl_pur_ord_unit_is_active
+            description: "Variable purchase order unit active flag"
+            data_type: varchar(1)
+          - name: volume_unit
+            description: "Volume unit"
+            data_type: varchar(3)
+          - name: material_volume
+            description: "Material volume"
+            data_type: decimal(18,9)
+          - name: size_or_dimension_text
+            description: "Size or dimension text"
+            data_type: varchar(32)
+          - name: industry_standard_name
+            description: "Industry standard name"
+            data_type: varchar(18)
+          - name: product_standard_id
+            description: "Product standard ID"
+            data_type: varchar(18)
+          - name: international_article_number_cat
+            description: "International article number category"
+            data_type: varchar(2)
+          - name: is_batch_management_required
+            description: "Batch management required flag"
+            data_type: smallint
+          - name: external_product_group
+            description: "External product group"
+            data_type: varchar(18)
+          - name: serial_no_explicitness_level
+            description: "Serial number explicitness level"
+            data_type: varchar(1)
+          - name: product_manufacturer_number
+            description: "Product manufacturer number"
+            data_type: varchar(40)
+          - name: manufacturer_number
+            description: "Manufacturer number"
+            data_type: varchar(10)
+          - name: manufacturer_part_profile
+            description: "Manufacturer part profile"
+            data_type: varchar(4)
+          - name: industry_sector
+            description: "Industry sector"
+            data_type: varchar(1)
+          - name: authorization_group
+            description: "Authorization group"
+            data_type: varchar(4)
+          - name: handling_unit_type
+            description: "Handling unit type"
+            data_type: varchar(4)
+          - name: purchng_val_key
+            description: "Purchasing value key"
+            data_type: varchar(4)
+          - name: contnrreq
+            description: "Container requirement"
+            data_type: varchar(2)
+          - name: maint_st
+            description: "Maintenance status"
+            data_type: varchar(15)
+          - name: strcond
+            description: "Storage condition"
+            data_type: varchar(2)
+          - name: temppcondindi
+            description: "Temperature condition indicator"
+            data_type: varchar(2)
+          - name: hazardmatnum
+            description: "Hazardous material number"
+            data_type: varchar(40)
+          - name: quant_grgiprnt
+            description: "Quantity gross print"
+            data_type: decimal(18,9)
+          - name: label_type
+            description: "Label type"
+            data_type: varchar(2)
+          - name: label_form
+            description: "Label form"
+            data_type: varchar(2)
+          - name: min_rem_shelf
+            description: "Minimum remaining shelf life"
+            data_type: decimal(18,9)
+          - name: ttlshelflife
+            description: "Total shelf life"
+            data_type: decimal(18,9)
+          - name: strgperc
+            description: "Storage percentage"
+            data_type: decimal(18,9)
+          - name: prd_indi_exp_dt
+            description: "Product indicator expiry date"
+            data_type: varchar(1)
+          - name: roundrlcal_sled
+            description: "Round calculation SLED"
+            data_type: varchar(1)
+          - name: materqualdisckind
+            description: "Material quality discount kind"
+            data_type: varchar(1)
+          - name: docnumwithodocmanagsys
+            description: "Document number without document management system"
+            data_type: varchar(22)
+          - name: doctyp_witho_doc_manasys
+            description: "Document type without document management system"
+            data_type: varchar(3)
+          - name: docver_witho_doc_manasys
+            description: "Document version without document management system"
+            data_type: varchar(2)
+          - name: docchngenum_withodocumanasys
+            description: "Document change number without document management system"
+            data_type: varchar(6)
+          - name: pgenum_doc_witho_doc_manasys
+            description: "Page number document without document management system"
+            data_type: varchar(3)
+          - name: basic_material
+            description: "Basic material"
+            data_type: varchar(48)
+          - name: pge_format_produc_memo
+            description: "Page format production memo"
+            data_type: varchar(4)
+          - name: pack_code
+            description: "Pack code"
+            data_type: varchar(10)
+          - name: material_frieght_group
+            description: "Material freight group"
+            data_type: varchar(8)
+          - name: commodity
+            description: "Commodity code"
+            data_type: varchar(18)
+          - name: country_of_origin_material
+            description: "Country of origin for material"
+            data_type: varchar(3)
+          - name: unit_specific_product_length
+            description: "Unit specific product length"
+            data_type: decimal(18,9)
+          - name: unit_specific_product_width
+            description: "Unit specific product width"
+            data_type: decimal(18,9)
+          - name: unit_specific_product_height
+            description: "Unit specific product height"
+            data_type: decimal(18,9)
+          - name: product_measurement_unit
+            description: "Product measurement unit"
+            data_type: varchar(3)
+          - name: pckg_matertyp
+            description: "Package material type"
+            data_type: varchar(4)
+          - name: labdsgnoffc
+            description: "Lab design office"
+            data_type: varchar(3)
+          - name: cad_indicator
+            description: "CAD indicator"
+            data_type: smallint
+          - name: mater_grp_pckg_mater
+            description: "Material group packaging material"
+            data_type: varchar(4)
+          - name: envrmnt_relevant
+            description: "Environment relevant"
+            data_type: smallint
+          - name: indi_highly_viscous
+            description: "Indicator highly viscous"
+            data_type: smallint
+          - name: indi_in_bulk_liquid
+            description: "Indicator in bulk liquid"
+            data_type: smallint
+          - name: approved_batch_rec_req
+            description: "Approved batch record required"
+            data_type: smallint
+          - name: language
+            description: "Language key"
+            data_type: varchar(2)
+          - name: product_description
+            description: "Product description"
+            data_type: varchar(40)
+
+  - name: lookup_tables
+    description: "Lookup tables for material attributes"
+    tables:
+      - name: material_attributes_lookup
+        description: "Material attributes lookup table"
+        columns:
+          - name: key_of_obj
+            description: "Object key for lookup"
+            data_type: varchar(90)
+          - name: char_value
+            description: "Characteristic value"
+            data_type: varchar(1)
+          - name: attribute_type
+            description: "Type of attribute"
+            data_type: varchar(50)
+# --- Chunk 7 ---
+version: 2
+
+sources:
+  - name: xml_source
+    description: "XML source data for material master information"
+    tables:
+      - name: xml_md_material_attr_txt
+        description: "Material attributes and text data from XML source"
+        columns:
+          - name: product
+            description: "Material/Product number"
+            data_type: varchar
+          - name: matergrppckgmater
+            description: "Material group packaging material"
+            data_type: varchar
+          - name: productgroup
+            description: "Product group"
+            data_type: varchar
+          - name: weightunit
+            description: "Weight unit of measure"
+            data_type: varchar
+          - name: volumeunit
+            description: "Volume unit of measure"
+            data_type: varchar
+          - name: materialvolume
+            description: "Material volume"
+            data_type: decimal
+          - name: sizeordimensiontext
+            description: "Size or dimension text"
+            data_type: varchar
+          - name: producthierarchy
+            description: "Product hierarchy"
+            data_type: varchar
+          - name: productoldid
+            description: "Old product ID"
+            data_type: varchar
+          - name: netweight
+            description: "Net weight"
+            data_type: decimal
+          - name: labdsgnoffc
+            description: "Lab design office"
+            data_type: varchar
+          - name: productstandardid
+            description: "Product standard ID (EAN/UPC)"
+            data_type: varchar
+          - name: grossweight
+            description: "Gross weight"
+            data_type: decimal
+          - name: itemcategorygroup
+            description: "Item category group"
+            data_type: varchar
+          - name: externalproductgroup
+            description: "External product group"
+            data_type: varchar
+          - name: division
+            description: "Division"
+            data_type: varchar
+          - name: crossplantstatusvaliditydate
+            description: "Cross plant status validity date"
+            data_type: date
+          - name: crossplantstatus
+            description: "Cross plant status"
+            data_type: varchar
+          - name: internationalarticlenumbercat
+            description: "International article number category"
+            data_type: varchar
+          - name: authorizationgroup
+            description: "Authorization group"
+            data_type: varchar
+          - name: producttype
+            description: "Product/Material type"
+            data_type: varchar
+          - name: industrysector
+            description: "Industry sector"
+            data_type: varchar
+          - name: pgenumdocwithodocmanasys
+            description: "Page number document without document management system"
+            data_type: varchar
+          - name: industrystandardname
+            description: "Industry standard name"
+            data_type: varchar
+          - name: docverwithodocmanasys
+            description: "Document version without document management system"
+            data_type: varchar
+          - name: doctypwithodocmanasys
+            description: "Document type without document management system"
+            data_type: varchar
+          - name: docchngenumwithodocumanasys
+            description: "Document change number without document management system"
+            data_type: varchar
+          - name: cadindicator
+            description: "CAD indicator"
+            data_type: varchar
+          - name: basicmaterial
+            description: "Basic material"
+            data_type: varchar
+          - name: pgeformatproducmemo
+            description: "Page format production memo"
+            data_type: varchar
+          - name: indiinbulkliquid
+            description: "Indicator in bulk liquid"
+            data_type: varchar
+          - name: indihighlyviscous
+            description: "Indicator highly viscous"
+            data_type: varchar
+          - name: envrmtrelevant
+            description: "Environment relevant indicator"
+            data_type: varchar
+          - name: docnumwithodocmanagsys
+            description: "Document number without document management system"
+            data_type: varchar
+          - name: packcode
+            description: "Packaging code"
+            data_type: varchar
+          - name: approvedbatchrecreg
+            description: "Approved batch record required"
+            data_type: varchar
+          - name: ttlshelflife
+            description: "Total shelf life"
+            data_type: integer
+          - name: temppcondindi
+            description: "Temperature condition indicator"
+            data_type: varchar
+          - name: strgperc
+            description: "Storage percentage"
+            data_type: decimal
+          - name: strcond
+            description: "Storage condition"
+            data_type: varchar
+          - name: roundrlcalsled
+            description: "Rounding rule calculation SLED"
+            data_type: varchar
+          - name: hazardmatnum
+            description: "Hazardous material number"
+            data_type: varchar
+          - name: contnrreq
+            description: "Container requirements"
+            data_type: varchar
+          - name: prdindiexpdt
+            description: "Product indicator expiry date"
+            data_type: varchar
+          - name: quantgrgiprnt
+            description: "Quantity goods receipt slip"
+            data_type: varchar
+          - name: minremshelf
+            description: "Minimum remaining shelf life"
+            data_type: integer
+          - name: labeltype
+            description: "Label type"
+            data_type: varchar
+          - name: labelform
+            description: "Label form"
+            data_type: varchar
+          - name: serialnoexplicitnessLevel
+            description: "Serial number explicitness level"
+            data_type: varchar
+          - name: manufacturernumber
+            description: "Manufacturer number"
+            data_type: varchar
+          - name: varblpurordunitisactive
+            description: "Variable purchase order unit is active"
+            data_type: varchar
+          - name: purchngvalkey
+            description: "Purchasing value key"
+            data_type: varchar
+          - name: materqualdisckind
+            description: "Material quality discount kind"
+            data_type: varchar
+          - name: purchaseorderquantityunit
+            description: "Purchase order quantity unit"
+            data_type: varchar
+          - name: manufacturerpartprofile
+            description: "Manufacturer part profile"
+            data_type: varchar
+          - name: productmanufacturernumber
+            description: "Product manufacturer number"
+            data_type: varchar
+          - name: materialfrieghtgroup
+            description: "Material freight group"
+            data_type: varchar
+          - name: baseunit
+            description: "Base unit of measure"
+            data_type: varchar
+          - name: productdescription
+            description: "Product description"
+            data_type: varchar
+          - name: isbatchmanagementrequired
+            description: "Is batch management required"
+            data_type: varchar
+          - name: createdbyuser
+            description: "Created by user"
+            data_type: varchar
+          - name: timeofcreation
+            description: "Time of creation"
+            data_type: timestamp
+          - name: maintainancestatus
+            description: "Maintenance status"
+            data_type: varchar
+          - name: commodity
+            description: "Commodity code"
+            data_type: varchar
+          - name: countryoforiginmaterial
+            description: "Country of origin material"
+            data_type: varchar
+          - name: unitspecificproductlength
+            description: "Unit specific product length"
+            data_type: decimal
+          - name: unitspecificproductwidth
+            description: "Unit specific product width"
+            data_type: decimal
+          - name: unitspecificproductheight
+            description: "Unit specific product height"
+            data_type: decimal
+          - name: productmeasurementunit
+            description: "Product measurement unit"
+            data_type: varchar
+          - name: ismarkedfordeletion
+            description: "Is marked for deletion"
+            data_type: varchar
+          - name: language
+            description: "Language key"
+            data_type: varchar
+
+  - name: target_tables
+    description: "Target tables for material master data"
+    tables:
+      - name: mtrl_master
+        description: "Material master target table"
+        columns:
+          - name: mtrl_nbr
+            description: "Material number"
+            data_type: varchar
+          - name: src_md5
+            description: "Source MD5 hash for change detection"
+            data_type: varchar
+          - name: etl_load_dt
+            description: "ETL load date"
+            data_type: timestamp
+# --- Chunk 8 ---
+version: 2
+
+sources:
+  - name: material_master_xml
+    description: "XML source for material master data from SAP"
+    tables:
+      - name: material_attr_txt
+        description: "Material attributes and text data from XML source"
+        columns:
+          - name: Product
+            description: "Material/Product ID"
+            data_type: varchar(40)
+          - name: Product0
+            description: "Material/Product ID for language-specific data"
+            data_type: varchar(40)
+          - name: Language
+            description: "Language key for text data"
+            data_type: varchar(2)
+          - name: ProductDescription
+            description: "Material description in specific language"
+            data_type: varchar(255)
+          - name: MaterialVolume
+            description: "Material volume"
+            data_type: decimal(15,3)
+          - name: SizeOrDimensionText
+            description: "Size or dimension text"
+            data_type: varchar(255)
+          - name: ProductOldID
+            description: "Old product ID"
+            data_type: varchar(40)
+          - name: GrossWeight
+            description: "Gross weight of material"
+            data_type: decimal(15,3)
+          - name: NetWeight
+            description: "Net weight of material"
+            data_type: decimal(15,3)
+          - name: WeightUnit
+            description: "Unit of weight measurement"
+            data_type: varchar(3)
+          - name: VolumeUnit
+            description: "Unit of volume measurement"
+            data_type: varchar(3)
+          - name: BaseUnit
+            description: "Base unit of measure"
+            data_type: varchar(3)
+          - name: ProductType
+            description: "Product type classification"
+            data_type: varchar(4)
+          - name: ProductGroup
+            description: "Product group"
+            data_type: varchar(9)
+          - name: ProductHierarchy
+            description: "Product hierarchy"
+            data_type: varchar(18)
+          - name: Division
+            description: "Division"
+            data_type: varchar(2)
+          - name: IndustrySector
+            description: "Industry sector"
+            data_type: varchar(1)
+          - name: CreatedByUser
+            description: "User who created the record"
+            data_type: varchar(12)
+          - name: CreationDate
+            description: "Creation date"
+            data_type: date
+          - name: TimeOfCreation
+            description: "Creation time"
+            data_type: time
+          - name: LastChangedByUser
+            description: "User who last changed the record"
+            data_type: varchar(12)
+          - name: LastChangeDate
+            description: "Last change date"
+            data_type: date
+          - name: LastChangeDateTime
+            description: "Last change date and time"
+            data_type: timestamp
+          - name: IsMarkedForDeletion
+            description: "Deletion flag"
+            data_type: varchar(1)
+          - name: MaintSt
+            description: "Maintenance status"
+            data_type: varchar(15)
+          - name: CrossPlantStatus
+            description: "Cross-plant material status"
+            data_type: varchar(2)
+          - name: CrossPlantStatusValidityDate
+            description: "Validity date for cross-plant status"
+            data_type: date
+
+  - name: material_master_target
+    description: "Target table for material master data"
+    tables:
+      - name: mtrl_master
+        description: "Material master target table"
+        columns:
+          - name: product_id
+            description: "Material/Product ID"
+            data_type: varchar(40)
+          - name: product_description
+            description: "Material description"
+            data_type: varchar(255)
+# --- Chunk 9 ---
+version: 2
+
+sources:
+  - name: xml_source
+    description: "XML source files for material master data"
+    tables:
+      - name: material_attr_txt
+        description: "Material attributes and text data from XML files"
+        columns:
+          - name: material_number
+            description: "Material number identifier"
+            data_type: varchar(50)
+          - name: language_key
+            description: "Language key for material descriptions"
+            data_type: varchar(2)
+          - name: material_description
+            description: "Material description text"
+            data_type: varchar(255)
+          - name: material_type
+            description: "Type of material"
+            data_type: varchar(10)
+          - name: base_unit_of_measure
+            description: "Base unit of measure"
+            data_type: varchar(10)
+          - name: material_group
+            description: "Material group classification"
+            data_type: varchar(20)
+          - name: plant
+            description: "Plant code"
+            data_type: varchar(10)
+          - name: storage_location
+            description: "Storage location"
+            data_type: varchar(10)
+          - name: created_date
+            description: "Record creation date"
+            data_type: timestamp
+          - name: created_by
+            description: "Record created by user"
+            data_type: varchar(50)
+          - name: changed_date
+            description: "Last change date"
+            data_type: timestamp
+          - name: changed_by
+            description: "Last changed by user"
+            data_type: varchar(50)
+
+  - name: lookup_tables
+    description: "Lookup tables for material master enrichment"
+    tables:
+      - name: material_attributes
+        description: "Material attribute lookup table"
+        columns:
+          - name: material_number
+            description: "Material number"
+            data_type: varchar(50)
+          - name: attribute_name
+            description: "Attribute name"
+            data_type: varchar(100)
+          - name: attribute_value
+            description: "Attribute value"
+            data_type: varchar(255)
+
+  - name: target_tables
+    description: "Target tables for material master data"
+    tables:
+      - name: mtrl_master
+        description: "Material master target table"
+        columns:
+          - name: material_number
+            description: "Material number - primary key"
+            data_type: varchar(50)
+          - name: material_description
+            description: "Material description"
+            data_type: varchar(255)
+          - name: material_type
+            description: "Material type"
+            data_type: varchar(10)
+          - name: base_uom
+            description: "Base unit of measure"
+            data_type: varchar(10)
+          - name: material_group
+            description: "Material group"
+            data_type: varchar(20)
+          - name: plant_code
+            description: "Plant code"
+            data_type: varchar(10)
+          - name: storage_location
+            description: "Storage location"
+            data_type: varchar(10)
+          - name: disposable_ind
+            description: "Disposable indicator"
+            data_type: varchar(1)
+          - name: expiry_ind
+            description: "Expiry indicator"
+            data_type: varchar(1)
+          - name: sterile_ind
+            description: "Sterile indicator"
+            data_type: varchar(1)
+          - name: serialized_ind
+            description: "Serialized indicator"
+            data_type: varchar(1)
+          - name: hyp_brand_desc
+            description: "HYP brand description"
+            data_type: varchar(100)
+          - name: hyp_cd
+            description: "HYP code"
+            data_type: varchar(20)
+          - name: rework_ind
+            description: "Rework indicator"
+            data_type: varchar(1)
+          - name: rebox_id
+            description: "Rebox ID"
+            data_type: varchar(20)
+          - name: dps_uom_qty
+            description: "DPS UOM quantity"
+            data_type: decimal(15,3)
+          - name: dps_generic_lot
+            description: "DPS generic lot"
+            data_type: varchar(50)
+          - name: fda_prod_cd
+            description: "FDA product code"
+            data_type: varchar(20)
+          - name: ce_mark_ind
+            description: "CE mark indicator"
+            data_type: varchar(1)
+          - name: ibp_scope_ind
+            description: "IBP scope indicator"
+            data_type: varchar(1)
+          - name: eccn_nbr
+            description: "ECCN number"
+            data_type: varchar(20)
+          - name: pto_relevant
+            description: "PTO relevant indicator"
+            data_type: varchar(1)
+          - name: pto_relevant_qnty
+            description: "PTO relevant quantity"
+            data_type: decimal(15,3)
+          - name: hazardous_ind
+            description: "Hazardous indicator"
+            data_type: varchar(1)
+          - name: mercury_free_ind
+            description: "Mercury free indicator"
+            data_type: varchar(1)
+          - name: latex_ind
+            description: "Latex indicator"
+            data_type: varchar(1)
+          - name: pvc_free_ind
+            description: "PVC free indicator"
+            data_type: varchar(1)
+          - name: dehp_free_ind
+            description: "DEHP free indicator"
+            data_type: varchar(1)
+          - name: danger_goods_ind
+            description: "Dangerous goods indicator"
+            data_type: varchar(1)
+          - name: mtrl_thk_msrmt
+            description: "Material thickness measurement"
+            data_type: decimal(10,3)
+          - name: mtrl_thk_lwr_limit
+            description: "Material thickness lower limit"
+            data_type: decimal(10,3)
+          - name: mtrl_thk_upr_limit
+            description: "Material thickness upper limit"
+            data_type: decimal(10,3)
+          - name: mtrl_thk_ind
+            description: "Material thickness indicator"
+            data_type: varchar(1)
+          - name: shpng_rstrctn
+            description: "Shipping restriction"
+            data_type: varchar(50)
+          - name: instrmnt_ind
+            description: "Instrument indicator"
+            data_type: varchar(1)
+          - name: rebox_nw_ind
+            description: "Rebox NW indicator"
+            data_type: varchar(1)
+          - name: rebox_ww_ind
+            description: "Rebox WW indicator"
+            data_type: varchar(1)
+          - name: scrap_itm_ind
+            description: "Scrap item indicator"
+            data_type: varchar(1)
+          - name: shpng_tmptr_ctrl_ind
+            description: "Shipping temperature control indicator"
+            data_type: varchar(1)
+          - name: record_hash
+            description: "MD5 hash of record for change detection"
+            data_type: varchar(32)
+          - name: created_date
+            description: "Record creation timestamp"
+            data_type: timestamp
+          - name: created_by
+            description: "Record created by"
+            data_type: varchar(50)
+          - name: updated_date
+            description: "Record last update timestamp"
+            data_type: timestamp
+          - name: updated_by
+            description: "Record last updated by"
+            data_type: varchar(50)
+# --- From wf_FF_AT_Z1_GL_ACCOUNT.XML ---
+
+sources:
+  - name: zb_reporting_finance_global_apptio
+    description: "BW Datasource for Global Finance Apptio reporting"
+    database: "{{ var('db_connection_h1', target.database) }}"
+    schema: "_SYS_BIC"
+    tables:
+      - name: gb_z1_appt1
+        description: "GL Account data from BW - GB_EZ_APPT datasource"
+        identifier: "ZB_REPORTING.FINANCE.GLOBAL.APPTIO/GB_Z1_APPT1"
+        columns:
+          - name: postingdateinthedocument
+            description: "Posting date in the document"
+            data_type: nvarchar
+            tests:
+              - not_null
+          - name: costcenter
+            description: "Cost center"
+            data_type: nvarchar
+          - name: localcurrency
+            description: "Local currency code"
+            data_type: nvarchar
+          - name: glaccountnumber
+            description: "GL account number"
+            data_type: nvarchar
+            tests:
+              - not_null
+          - name: fiscalyear
+            description: "Fiscal year"
+            data_type: nvarchar
+            tests:
+              - not_null
+          - name: purchasingdocumentnumber
+            description: "Purchase order document number"
+            data_type: nvarchar
+          - name: accountingdocumentnumber
+            description: "Accounting document number"
+            data_type: nvarchar
+            tests:
+              - not_null
+          - name: numoflineitemwithinaccountdoc
+            description: "Line item number within accounting document"
+            data_type: nvarchar
+            tests:
+              - not_null
+          - name: companycode
+            description: "Company code"
+            data_type: nvarchar
+            tests:
+              - not_null
+          - name: glaccountlongname
+            description: "GL account long description"
+            data_type: nvarchar
+          - name: accountnumofvendororcreditor
+            description: "Vendor or creditor account number"
+            data_type: nvarchar
+          - name: supplierfullname
+            description: "Supplier full name"
+            data_type: nvarchar
+          - name: debitcreditindicator
+            description: "Debit/Credit indicator"
+            data_type: nvarchar
+          - name: invoice_reference
+            description: "Invoice reference number"
+            data_type: nvarchar
+          - name: itemtext
+            description: "Line item text description"
+            data_type: nvarchar
+          - name: currencykey
+            description: "Document currency key"
+            data_type: nvarchar
+          - name: projectdefinition
+            description: "Project definition"
+            data_type: nvarchar
+          - name: wbs
+            description: "Work breakdown structure element"
+            data_type: nvarchar
+          - name: documenttype
+            description: "Document type"
+            data_type: nvarchar
+          - name: source_desc_long
+            description: "Source system description"
+            data_type: nvarchar
+          - name: fiscalperiod
+            description: "Fiscal period"
+            data_type: nvarchar
+            tests:
+              - not_null
+          - name: amountinlocalcurrency
+            description: "Amount in local currency"
+            data_type: decimal
+            tests:
+              - not_null
+          - name: amountindocumentcurrency
+            description: "Amount in document currency"
+            data_type: decimal
+            tests:
+              - not_null
+          - name: amount_dc
+            description: "Amount in document currency (calculated)"
+            data_type: decimal
+          - name: amount_lc
+            description: "Amount in local currency (calculated)"
+            data_type: decimal
+
+        # Source freshness check
+        freshness:
+          warn_after: {count: 12, period: hour}
+          error_after: {count: 24, period: hour}
+        
+        # Source metadata
+        meta:
+          created_by: "Shobhit Tyagi"
+          created_date: "17-APR-23"
+          owner: "Finance Team"
+          business_description: "Core GL account transaction data from SAP BW"
+# --- From wf_FF_AT_ZJ_GL_ACCOUNT.XML ---
+
+sources:
+  - name: sap_bw_ohs
+    description: "SAP BW OHS (Operational Hub Services) data source containing GL account information"
+    database: sapbwohs
+    schema: public
+    tables:
+      - name: zjglaptin
+        description: "ZJ GL Account Input - SAP BW DataSource for GL account transactions"
+        columns:
+          - name: ohrequid
+            description: "OH Request ID"
+            data_type: integer
+          - name: datapakid
+            description: "Data Package ID"
+            data_type: integer
+          - name: record
+            description: "Data Record number"
+            data_type: integer
+          - name: glani_zj
+            description: "GL Account Number"
+            data_type: varchar(29)
+          - name: glmcu_zj
+            description: "Cost Center"
+            data_type: varchar(12)
+          - name: gldoc_zj
+            description: "Document/Journal ID"
+            data_type: varchar(8)
+          - name: gldct_zj
+            description: "Document Type"
+            data_type: varchar(2)
+          - name: gljeln_zj
+            description: "Journal Line Number"
+            data_type: varchar(14)
+          - name: vendor_id_zj
+            description: "Vendor ID"
+            data_type: varchar(14)
+          - name: vendor_name_zj
+            description: "Vendor Name"
+            data_type: varchar(110)
+          - name: gmdl01_zj
+            description: "Account Description"
+            data_type: varchar(60)
+          - name: glbcrc_zj
+            description: "Base Currency Code"
+            data_type: varchar(3)
+          - name: glcrcd_zj
+            description: "From Currency Code"
+            data_type: varchar(3)
+          - name: line_desc_zj
+            description: "Journal Line Description"
+            data_type: varchar(90)
+          - name: glexr_zj
+            description: "Remark/Explanation"
+            data_type: varchar(60)
+          - name: glsbl_zj
+            description: "Subledger G/L"
+            data_type: varchar(8)
+          - name: glpo_zj
+            description: "Purchase Order"
+            data_type: varchar(8)
+          - name: glvinv_zj
+            description: "Supplier Invoice"
+            data_type: varchar(25)
+          - name: gldgj_zj
+            description: "Posting Date (SAP DATS format)"
+            data_type: date
+          - name: fiscal_per_zj
+            description: "Fiscal Year/Period"
+            data_type: varchar(14)
+          - name: desc_long_zj
+            description: "Source ERP Description"
+            data_type: varchar(60)
+          - name: amount_zj
+            description: "Amount"
+            data_type: decimal(19,3)
+          - name: amount_loc_zj
+            description: "Local Amount"
+            data_type: decimal(19,3)
+        meta:
+          created_by: "Douglas Lithgow"
+          created_date: "21-JAN-2021"
+          source_system: "SAP BW OHS"
+          extraction_type: "Full Load"
+# --- From wf_S_BP_ARURHD.XML ---
+
+sources:
+  - name: bpcs_japan
+    description: "Japan BPCS source system - Business Planning and Control System"
+    database: "{{ env_var('DBT_SOURCE_DATABASE', 'XSPPACJP') }}"
+    schema: "RTRNLIB"
+    
+    tables:
+      - name: arurhd
+        description: "ARURHD table from Japan BPCS system - Accounts Receivable Header"
+        identifier: "ARURHD"
+        
+        columns:
+          - name: lhspcd
+            description: "Shop code - 店舗コード"
+            data_type: numeric
+            
+          - name: lhspno
+            description: "Shop number - 店舗番号"
+            data_type: char
+            
+          - name: lhsptk
+            description: "Shop type code - 店舗種別コード"
+            data_type: char
+            
+          - name: lhtrbk
+            description: "Transaction book code - 取引帳簿コード"
+            data_type: char
+            
+          - name: lhegcd
+            description: "Entry code - 入力コード"
+            data_type: char
+            
+          - name: lhedsq
+            description: "Entry sequence number - 入力順序番号"
+            data_type: numeric
+            
+          - name: lhcscd
+            description: "Customer code - 顧客コード"
+            data_type: char
+            
+          - name: lhhpcd
+            description: "Ship-to code - 配送先コード"
+            data_type: char
+            
+          - name: lhsptp
+            description: "Shop type - 店舗タイプ"
+            data_type: char
+            
+          - name: lhtacd
+            description: "Tax code - 税務コード"
+            data_type: char
+            
+          - name: lhspnd
+            description: "Suspend date - 保留日付"
+            data_type: numeric
+            
+          - name: lhnyyd
+            description: "Net year date - 年度日付"
+            data_type: numeric
+            
+          - name: lhrcdt
+            description: "Record date - 年度日付"
+            data_type: numeric
+            
+          - name: lhpayk
+            description: "Payment key - 支払キー"
+            data_type: char
+            
+          - name: lhdda1
+            description: "Detail data 1 - 詳細データ1"
+            data_type: char
+            
+          - name: lhdda2
+            description: "Detail data 2 - 詳細データ2"
+            data_type: char
+            
+          - name: lhspat
+            description: "Shop amount - 店舗金額"
+            data_type: decimal
+            
+          - name: lhtaxm
+            description: "Tax amount - 税額"
+            data_type: decimal
+            
+          - name: lhaskm
+            description: "Ask amount - 請求額"
+            data_type: decimal
+            
+          - name: lhrsdt
+            description: "Reserve date - 予約日"
+            data_type: numeric
+            
+          - name: lhtaxh
+            description: "Tax hold - 予約税額"
+            data_type: decimal
+            
+          - name: lhrsam
+            description: "Reserve amount - 予約金額"
+            data_type: decimal
+            
+          - name: lhslcd
+            description: "Sales code - 売上コード"
+            data_type: numeric
+            
+          - name: lhctax
+            description: "Customer tax - 顧客税額"
+            data_type: decimal
+            
+          - name: lhchom
+            description: "Customer home amount - 顧客金額（本国）"
+            data_type: decimal
+            
+          - name: lhtden
+            description: "Trade number - 取引番号"
+            data_type: char
+            
+          - name: lhtded
+            description: "Trade date - 取引日付"
+            data_type: numeric
+            
+          - name: lhrcrm
+            description: "Record amount - 年度取引金額"
+            data_type: decimal
+            
+          - name: lhdlkb
+            description: "Delete key - 削除キー"
+            data_type: char
+            
+          - name: lhodno
+            description: "Order number - 注文番号"
+            data_type: char
+            
+          - name: lhkhst
+            description: "Key history code - キー履歴コード"
+            data_type: char
+            
+          - name: lhnksf
+            description: "Net key flag - 年度キーフラグ"
+            data_type: char
+            
+          - name: lhspnk
+            description: "Shop number key - 店舗番号キー"
+            data_type: char
+            
+          - name: lhnyuf
+            description: "Net year flag - 年度フラグ"
+            data_type: char
+            
+          - name: lhtaxf
+            description: "Tax flag - 税フラグ"
+            data_type: char
+            
+          - name: lhsefg
+            description: "Settlement flag - 決済フラグ"
+            data_type: char
+            
+          - name: lhsedt
+            description: "Settlement date - 決済日付"
+            data_type: numeric
+            
+          - name: lhhryu
+            description: "Hold reason - 保留理由"
+            data_type: char
+            
+          - name: lhdltf
+            description: "Delete flag - 削除フラグ"
+            data_type: char
+            
+          - name: lhrldt
+            description: "Release date - 解除日"
+            data_type: numeric
+            
+          - name: lhrltm
+            description: "Release time - 解除時刻"
+            data_type: numeric
+            
+          - name: lhrlur
+            description: "Release user - 解除ユーザー"
+            data_type: char
+            
+          - name: lhrlpg
+            description: "Release program - 解除プログラム"
+            data_type: char
+
+        # Source freshness check
+        freshness:
+          warn_after: {count: 1, period: day}
+          error_after: {count: 2, period: day}
+          
+        # Source data quality checks
+        loaded_at_field: lhrldt

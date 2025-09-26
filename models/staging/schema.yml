@@ -1,0 +1,1231 @@
+# From wf_AM_DI_CUSTOMER.XML
+version: 2
+
+models:
+  - name: stg_cust_master
+    description: "Staging model for customer master data with basic transformations"
+    columns:
+      - name: cust_nbr
+        description: "Customer number - Primary Key"
+        tests:
+          - not_null
+          - unique
+      - name: cntry_key
+        description: "Country key"
+      - name: city
+        description: "City name"
+      - name: po_cd
+        description: "Postal code"
+      - name: region_key
+        description: "Region key"
+      - name: street
+        description: "Street address"
+      - name: central_ordr_blk
+        description: "Central order block indicator"
+      - name: central_ordr_blk_transformed
+        description: "Transformed central order block (I/A based on original values)"
+      - name: attribute_9
+        description: "Customer attribute 9 - used for customer classification"
+      - name: etl_load_dt
+        description: "ETL load timestamp"
+
+  - name: stg_ptnr_fctn
+    description: "Staging model for partner function data"
+    columns:
+      - name: cust_nbr
+        description: "Customer number"
+        tests:
+          - not_null
+      - name: sales_org_id
+        description: "Sales organization ID"
+        tests:
+          - not_null
+      - name: ptnr_cust_nbr
+        description: "Partner customer number"
+      - name: etl_load_dt
+        description: "ETL load timestamp"
+
+  - name: stg_cust_adrs
+    description: "Staging model for customer address data with current records only"
+    columns:
+      - name: adrs_nbr
+        description: "Address number"
+        tests:
+          - not_null
+      - name: cust_nbr
+        description: "Customer number"
+      - name: name_1
+        description: "Customer name line 1"
+      - name: city
+        description: "City name"
+      - name: region_key
+        description: "Region key"
+      - name: po_cd
+        description: "Postal code"
+      - name: strt_1
+        description: "Street address line 1"
+      - name: strt_2
+        description: "Street address line 2"
+      - name: strt_3
+        description: "Street address line 3"
+      - name: etl_load_dt
+        description: "ETL load timestamp"
+# --- From wf_AP_FF_CITIBANK_VCA.XML ---
+
+models:
+  - name: stg_t_ap_citibank_vca
+    description: "Staging model for Citibank Virtual Card Account data with basic transformations and data quality checks"
+    columns:
+      - name: action_type
+        description: "Type of action to be performed on the record"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['INSERT', 'UPDATE', 'DELETE', 'UPSERT']
+              quote: false
+      - name: record_id
+        description: "Unique identifier for the record"
+        tests:
+          - not_null
+          - unique
+      - name: issuer_id
+        description: "Identifier for the card issuer"
+        tests:
+          - not_null
+      - name: ica_nbr
+        description: "ICA (Interbank Card Association) number"
+      - name: bank_nbr
+        description: "Bank identification number"
+      - name: user_name
+        description: "Username associated with the virtual card"
+      - name: request_id
+        description: "Unique request identifier"
+        tests:
+          - not_null
+      - name: min_purchase_amt
+        description: "Minimum purchase amount allowed"
+      - name: max_purchase_amt
+        description: "Maximum purchase amount allowed"
+      - name: purchase_currency
+        description: "Currency code for purchases"
+        tests:
+          - accepted_values:
+              values: ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'JPY']
+              quote: false
+      - name: purchase_type
+        description: "Type of purchase allowed"
+      - name: v_card_alias
+        description: "Virtual card alias name"
+      - name: supplier_name
+        description: "Name of the supplier/merchant"
+      - name: supplier_email
+        description: "Email address of the supplier"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 320
+              inclusive: true
+      - name: multi_use
+        description: "Flag indicating if card can be used multiple times"
+        tests:
+          - accepted_values:
+              values: ['Y', 'N', 'YES', 'NO', '1', '0']
+              quote: false
+      - name: valid_from
+        description: "Start date for card validity"
+        tests:
+          - not_null
+      - name: valid_to
+        description: "End date for card validity"
+        tests:
+          - not_null
+      - name: valid_for
+        description: "Duration description for card validity"
+      - name: cdf_payment_number
+        description: "CDF payment reference number"
+      - name: cdf_payee_number
+        description: "CDF payee identification number"
+      - name: cdf_payment_amount
+        description: "CDF payment amount"
+      - name: cdf_payment_date
+        description: "Date of CDF payment"
+      - name: cdf_payee_name
+        description: "Name of the CDF payee"
+      - name: etl_load_dte
+        description: "ETL load timestamp"
+        tests:
+          - not_null
+    tests:
+      # Test that valid_to is after valid_from
+      - dbt_utils.expression_is_true:
+          expression: "valid_to >= valid_from"
+          config:
+            severity: error
+      # Test for reasonable date ranges
+      - dbt_utils.expression_is_true:
+          expression: "valid_from >= '2000-01-01'"
+          config:
+            severity: warn
+# --- From wf_BL_FF_ZJ_JOURNALS.XML ---
+
+models:
+  - name: stg_f0011
+    description: "Staging model for JDE Account Balances"
+    columns:
+      - name: currency_code_from
+        description: "Currency Code From"
+        tests:
+          - not_null
+      - name: currency_code
+        description: "Currency Code"
+        tests:
+          - not_null
+      - name: item_status
+        description: "Item Status"
+      - name: amount_entered
+        description: "Amount Entered"
+
+  - name: stg_f0911
+    description: "Staging model for JDE Account Ledger"
+    columns:
+      - name: company
+        description: "Company Code"
+        tests:
+          - not_null
+      - name: document_type
+        description: "Document Type"
+        tests:
+          - not_null
+      - name: document_number
+        description: "Document Number"
+        tests:
+          - not_null
+      - name: gl_date
+        description: "GL Date in Julian format"
+        tests:
+          - not_null
+      - name: journal_entry_line_number
+        description: "Journal Entry Line Number"
+        tests:
+          - not_null
+      - name: ledger_type
+        description: "Ledger Type"
+        tests:
+          - not_null
+      - name: posted_code
+        description: "Posted Code (P=Posted)"
+
+  - name: stg_f0901
+    description: "Staging model for JDE Account Master"
+    columns:
+      - name: account_id
+        description: "Account ID"
+        tests:
+          - not_null
+          - unique
+      - name: account_description
+        description: "Account Description"
+
+  - name: stg_blackline_journals_src
+    description: "Staging model for Blackline journals source file"
+    columns:
+      - name: batch_number
+        description: "Batch Number"
+      - name: document_type
+        description: "Document Type"
+      - name: document_number
+        description: "Document Number"
+      - name: gl_date
+        description: "GL Date"
+      - name: journal_entry_line_number
+        description: "Journal Entry Line Number"
+# --- From wf_BL_FF_ZJ_JOURNALS_STG.XML ---
+
+models:
+  - name: stg_f0901
+    description: "Staging model for Account Master (F0901) with data cleansing"
+    columns:
+      - name: gmco
+        description: "Company code"
+        tests:
+          - not_null
+      - name: gmaid
+        description: "Account ID"
+        tests:
+          - not_null
+          - unique
+      - name: gmdl01
+        description: "Account description"
+
+  - name: stg_f0911
+    description: "Staging model for Account Ledger (F0911) with data cleansing"
+    columns:
+      - name: glkco
+        description: "Company code"
+        tests:
+          - not_null
+      - name: gldct
+        description: "Document type"
+        tests:
+          - not_null
+      - name: gldoc
+        description: "Document number"
+        tests:
+          - not_null
+      - name: gldgj
+        description: "GL date"
+        tests:
+          - not_null
+      - name: gljeln
+        description: "Journal entry line number"
+        tests:
+          - not_null
+      - name: glextl
+        description: "Line extension"
+        tests:
+          - not_null
+      - name: gllt
+        description: "Ledger type"
+        tests:
+          - not_null
+      - name: glaa
+        description: "Amount"
+        tests:
+          - not_null
+
+  - name: stg_f0011
+    description: "Staging model for Currency Information (F0011)"
+    columns:
+      - name: icicut
+        description: "Currency unit type"
+        tests:
+          - not_null
+      - name: icicu
+        description: "Currency unit"
+        tests:
+          - not_null
+
+  - name: stg_f0092
+    description: "Staging model for User Profile (F0092)"
+    columns:
+      - name: uluser
+        description: "User ID"
+      - name: ulan8
+        description: "Address number"
+
+  - name: stg_f01151
+    description: "Staging model for Electronic Address (F01151)"
+    columns:
+      - name: eaan8
+        description: "Address number"
+      - name: eaetp
+        description: "Electronic address type"
+      - name: eaemal
+        description: "Email address"
+# --- Chunk 2 ---
+version: 2
+
+models:
+  - name: stg_f0911_journals
+    description: "Staged journal entries with data cleansing and null handling"
+    columns:
+      - name: glicu
+        description: "Batch Number"
+        tests:
+          - not_null
+      - name: glkco
+        description: "Document Company"
+        tests:
+          - not_null
+      - name: gldct
+        description: "Document Type"
+        tests:
+          - not_null
+      - name: gldoc
+        description: "Document Number"
+        tests:
+          - not_null
+      - name: gljeln
+        description: "Journal Entry Line Number"
+        tests:
+          - not_null
+      - name: gllt
+        description: "Ledger Type"
+        tests:
+          - not_null
+
+  - name: stg_f0901_accounts
+    description: "Staged account master data"
+    columns:
+      - name: gmaid
+        description: "Account ID"
+        tests:
+          - not_null
+          - unique
+
+  - name: stg_f0011_batches
+    description: "Staged batch control records"
+    columns:
+      - name: icicu
+        description: "Batch Number"
+        tests:
+          - not_null
+
+  - name: stg_f0092_users
+    description: "Staged user profile data"
+    columns:
+      - name: uluser
+        description: "User ID"
+        tests:
+          - not_null
+
+  - name: stg_f01151_emails
+    description: "Staged electronic address data"
+    columns:
+      - name: eaan8
+        description: "Address Number"
+        tests:
+          - not_null
+# --- From wf_CM_Z1_DAILY_SALES_FEED.XML ---
+
+models:
+  - name: stg_t_cm_z1_sales
+    description: "Staging model for T_CM_Z1_SALES with data cleansing and standardization"
+    columns:
+      - name: sales_transaction_id
+        description: "Unique identifier for sales transaction"
+        tests:
+          - not_null
+      - name: order_number
+        description: "Cleaned order number"
+        tests:
+          - not_null
+      - name: line_item_number
+        description: "Cleaned line item number"
+      - name: invoice_number
+        description: "Cleaned invoice number"
+      - name: invoice_date
+        description: "Invoice date"
+        tests:
+          - not_null
+      - name: source_system
+        description: "Source system identifier"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['SAP', 'ORACLE', 'LEGACY']
+      - name: business_segment
+        description: "Business segment code"
+        tests:
+          - not_null
+      - name: business_segment_description
+        description: "Business segment description"
+      - name: surgery_date
+        description: "Surgery date"
+      - name: customer_number
+        description: "Customer number"
+        tests:
+          - not_null
+      - name: customer_name
+        description: "Customer name"
+        tests:
+          - not_null
+      - name: item_number
+        description: "Item number"
+        tests:
+          - not_null
+      - name: item_description
+        description: "Item description"
+      - name: unit_sale_price
+        description: "Unit sale price"
+        tests:
+          - not_null
+      - name: quantity_shipped
+        description: "Quantity shipped"
+        tests:
+          - not_null
+      - name: unit_list_price
+        description: "Unit list price"
+      - name: etl_load_timestamp
+        description: "ETL load timestamp"
+        tests:
+          - not_null
+# --- From wf_DI_ITEM_MTRL_MASTER.XML ---
+
+models:
+  - name: stg_xml_material_data
+    description: "Staged material data from XML source"
+    columns:
+      - name: product
+        description: "Material/Product number"
+        tests:
+          - not_null
+          - unique
+      - name: product_type
+        description: "Product type classification"
+      - name: base_unit
+        description: "Base unit of measure"
+      - name: gross_weight
+        description: "Gross weight of material"
+      - name: net_weight
+        description: "Net weight of material"
+      - name: creation_date_time
+        description: "Combined creation date and time"
+      - name: last_change_date_time
+        description: "Combined last change date and time"
+      - name: is_marked_for_deletion
+        description: "Soft delete flag (Y/N)"
+
+  - name: stg_material_descriptions
+    description: "Staged material descriptions"
+    columns:
+      - name: product
+        description: "Material number"
+        tests:
+          - not_null
+      - name: language
+        description: "Language key"
+      - name: product_description
+        description: "Material description"
+        tests:
+          - not_null
+
+  - name: stg_material_characteristics
+    description: "Staged material characteristics from lookup tables"
+    columns:
+      - name: material_number
+        description: "Material number"
+      - name: characteristic_name
+        description: "Name of characteristic"
+      - name: characteristic_value
+        description: "Value of characteristic"
+# --- Chunk 3 ---
+version: 2
+
+models:
+  - name: stg_material_source
+    description: "Staging model for material source data"
+    columns:
+      - name: product
+        description: "Material number/Product ID"
+        tests:
+          - not_null
+          - unique
+      - name: matergrppckgmater
+        description: "Material group packaging material"
+      - name: productgroup
+        description: "Product group"
+      - name: etl_load_dt
+        description: "ETL load timestamp"
+        tests:
+          - not_null
+
+  - name: stg_lookup_ibp_scope
+    description: "Staging model for IBP Scope lookup"
+    columns:
+      - name: key_of_obj
+        description: "Lookup key"
+        tests:
+          - not_null
+      - name: char_value
+        description: "IBP Scope value"
+
+  - name: stg_lookup_ce_mark
+    description: "Staging model for CE Mark lookup"
+    columns:
+      - name: key_of_obj
+        description: "Lookup key"
+        tests:
+          - not_null
+      - name: char_value
+        description: "CE Mark indicator"
+
+  - name: stg_mtrl_master_existing
+    description: "Staging model for existing material master records"
+    columns:
+      - name: mtrl_nbr
+        description: "Material number"
+        tests:
+          - not_null
+          - unique
+      - name: last_chg_dt
+        description: "Last change date"
+# --- Chunk 4 ---
+version: 2
+
+models:
+  - name: stg_material_master
+    description: "Staged material master data with basic transformations"
+    columns:
+      - name: product
+        description: "Material/Product number (trimmed)"
+        tests:
+          - not_null
+          - unique
+      - name: material_group_packaging
+        description: "Material group for packaging materials"
+      - name: product_group
+        description: "Product group"
+      - name: weight_unit
+        description: "Weight unit"
+      - name: volume_unit
+        description: "Volume unit"
+      - name: material_volume
+        description: "Material volume"
+      - name: net_weight
+        description: "Net weight"
+      - name: gross_weight
+        description: "Gross weight"
+      - name: base_unit
+        description: "Base unit of measure"
+      - name: product_description
+        description: "Product description"
+      - name: creation_datetime
+        description: "Combined creation date and time"
+      - name: last_change_datetime
+        description: "Combined last change date and time"
+      - name: is_batch_management_required
+        description: "Batch management required (Y/N)"
+      - name: is_marked_for_deletion
+        description: "Soft delete flag (Y/N)"
+      - name: cad_indicator
+        description: "CAD indicator (Y/N)"
+      - name: unit_specific_product_width
+        description: "Unit specific product width (decimal converted)"
+        
+  - name: stg_material_attributes
+    description: "Staged material attributes from lookup enrichment"
+    columns:
+      - name: product
+        description: "Material/Product number"
+        tests:
+          - not_null
+      - name: danger_goods_ind
+        description: "Dangerous goods indicator"
+      - name: disposable_ind
+        description: "Disposable indicator"
+      - name: expiry_ind
+        description: "Expiry indicator"
+      - name: sterile_ind
+        description: "Sterile indicator"
+      - name: serialized_ind
+        description: "Serialized indicator"
+# --- Chunk 5 ---
+version: 2
+
+models:
+  - name: stg_xml_material_master
+    description: "Staging model for XML material master data with transformations"
+    columns:
+      - name: product
+        description: "Product identifier - primary key"
+        tests:
+          - not_null
+          - unique
+      - name: product_type
+        description: "Product type code"
+        tests:
+          - not_null
+      - name: base_unit
+        description: "Base unit of measure"
+        tests:
+          - not_null
+      - name: creation_date
+        description: "Record creation timestamp"
+        tests:
+          - not_null
+      - name: last_change_date
+        description: "Last change timestamp"
+      - name: is_marked_for_deletion
+        description: "Deletion flag (0=active, 1=deleted)"
+        tests:
+          - accepted_values:
+              values: [0, 1]
+      - name: etl_load_dt
+        description: "ETL load timestamp"
+        tests:
+          - not_null
+
+  - name: stg_material_descriptions
+    description: "Staging model for material descriptions in English"
+    columns:
+      - name: product
+        description: "Product identifier"
+        tests:
+          - not_null
+      - name: language
+        description: "Language code (filtered to EN)"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['EN']
+      - name: product_description
+        description: "Product description in English"
+# --- Chunk 6 ---
+version: 2
+
+models:
+  - name: stg_xml_material_attr_txt
+    description: "Staged XML material attribute text data"
+    columns:
+      - name: product
+        description: "Material number"
+        tests:
+          - not_null
+      - name: product_type
+        description: "Material type"
+      - name: product_description
+        description: "Material description"
+      - name: language
+        description: "Language key"
+        tests:
+          - accepted_values:
+              values: ['EN', 'DE', 'FR', 'ES']
+
+  - name: int_material_lookups
+    description: "Material master data enriched with characteristic lookups"
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - product
+            - language
+    columns:
+      - name: product
+        description: "Material number"
+        tests:
+          - not_null
+          - unique
+      - name: pvc_free_ind
+        description: "PVC Free Indicator"
+      - name: rework_ind
+        description: "Rework Indicator"
+      - name: hyp_cd
+        description: "HYP Code"
+      - name: hyp_brand_desc
+        description: "HYP Brand Description"
+      - name: danger_goods_ind
+        description: "Dangerous Goods Indicator"
+      - name: mtrl_thk_ind
+        description: "Material Thickness Indicator"
+      - name: mtrl_thk_upr_limit
+        description: "Material Thickness Upper Limit"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 9999.99
+      - name: mtrl_thk_lwr_limit
+        description: "Material Thickness Lower Limit"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 9999.99
+      - name: mtrl_thk_msrmt
+        description: "Material Thickness Measurement"
+      - name: shpng_rstrctn
+        description: "Shipping Restriction"
+      - name: shpng_tmptr_ctrl_ind
+        description: "Shipping Temperature Control Indicator"
+      - name: scrap_itm_ind
+        description: "Scrap Item Indicator"
+      - name: rebox_ww_ind
+        description: "Rebox WW Indicator"
+# --- Chunk 7 ---
+version: 2
+
+models:
+  - name: stg_xml_material_attr
+    description: "Staged XML material attributes data with basic transformations"
+    columns:
+      - name: product
+        description: "Material/Product number - primary identifier"
+        tests:
+          - not_null
+          - unique
+      - name: productdescription
+        description: "Product description text"
+        tests:
+          - not_null
+      - name: baseunit
+        description: "Base unit of measure"
+        tests:
+          - not_null
+      - name: etl_load_dt
+        description: "ETL load timestamp"
+        tests:
+          - not_null
+# --- Chunk 8 ---
+version: 2
+
+models:
+  - name: stg_material_attr_txt
+    description: "Staging model for material attributes and text data"
+    columns:
+      - name: product_id
+        description: "Material/Product ID"
+        tests:
+          - not_null
+      - name: product_description
+        description: "Material description"
+      - name: material_volume
+        description: "Material volume"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+      - name: gross_weight
+        description: "Gross weight"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+      - name: net_weight
+        description: "Net weight"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+      - name: is_marked_for_deletion
+        description: "Deletion indicator"
+        tests:
+          - accepted_values:
+              values: ['X', '']
+      - name: creation_datetime
+        description: "Creation date and time"
+        tests:
+          - not_null
+      - name: last_change_datetime
+        description: "Last change date and time"
+
+  - name: stg_material_language_text
+    description: "Staging model for material language-specific text"
+    columns:
+      - name: product_id
+        description: "Material/Product ID"
+        tests:
+          - not_null
+      - name: language
+        description: "Language key"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['EN', 'DE', 'FR', 'ES', 'IT', 'JA', 'ZH']
+      - name: product_description
+        description: "Product description in specific language"
+        tests:
+          - not_null
+# --- Chunk 9 ---
+version: 2
+
+models:
+  - name: stg_material_attr_txt
+    description: "Staging model for material attributes and text data from XML source"
+    columns:
+      - name: material_number
+        description: "Material number identifier"
+        tests:
+          - not_null
+      - name: language_key
+        description: "Language key for descriptions"
+        tests:
+          - not_null
+      - name: material_description
+        description: "Material description text"
+      - name: material_type
+        description: "Type of material"
+      - name: base_unit_of_measure
+        description: "Base unit of measure"
+      - name: material_group
+        description: "Material group classification"
+      - name: plant
+        description: "Plant code"
+      - name: storage_location
+        description: "Storage location"
+      - name: created_date
+        description: "Record creation date"
+      - name: created_by
+        description: "Record created by user"
+      - name: changed_date
+        description: "Last change date"
+      - name: changed_by
+        description: "Last changed by user"
+      - name: load_timestamp
+        description: "ETL load timestamp"
+        tests:
+          - not_null
+
+  - name: stg_material_attributes
+    description: "Staging model for material attribute lookup data"
+    columns:
+      - name: material_number
+        description: "Material number"
+        tests:
+          - not_null
+      - name: attribute_name
+        description: "Attribute name"
+        tests:
+          - not_null
+      - name: attribute_value
+        description: "Attribute value"
+# --- From wf_FF_AT_Z1_GL_ACCOUNT.XML ---
+
+models:
+  - name: stg_gl_account_transactions
+    description: "Staging model for GL account transactions from BW datasource with data cleansing and standardization"
+    columns:
+      - name: posting_date_clean
+        description: "Cleaned posting date from document"
+        tests:
+          - not_null
+      - name: fiscal_year_clean
+        description: "Cleaned fiscal year"
+        tests:
+          - not_null
+      - name: fiscal_period_clean
+        description: "Cleaned fiscal period"
+        tests:
+          - not_null
+      - name: accounting_document_number_clean
+        description: "Cleaned accounting document number"
+        tests:
+          - not_null
+      - name: line_item_number_clean
+        description: "Cleaned line item number within accounting document"
+        tests:
+          - not_null
+      - name: item_text_clean
+        description: "Cleaned item text with quote removal"
+      - name: gl_account_number_clean
+        description: "Cleaned GL account number"
+        tests:
+          - not_null
+      - name: gl_account_description_clean
+        description: "Cleaned GL account long name with quote removal"
+      - name: cost_center_clean
+        description: "Cleaned cost center"
+      - name: company_code_clean
+        description: "Cleaned company code"
+        tests:
+          - not_null
+      - name: vendor_account_clean
+        description: "Cleaned vendor or creditor account number"
+      - name: supplier_name_clean
+        description: "Cleaned supplier full name with quote removal"
+      - name: purchase_order_clean
+        description: "Cleaned purchasing document number"
+      - name: invoice_reference_clean
+        description: "Cleaned invoice reference"
+      - name: amount_document_currency_str
+        description: "Amount in document currency converted to string"
+        tests:
+          - not_null
+      - name: currency_key_clean
+        description: "Cleaned document currency key"
+      - name: amount_local_currency_str
+        description: "Amount in local currency converted to string"
+        tests:
+          - not_null
+      - name: local_currency_clean
+        description: "Cleaned local currency code"
+      - name: source_description_clean
+        description: "Cleaned source system description"
+      - name: project_definition_clean
+        description: "Cleaned project definition"
+      - name: wbs_clean
+        description: "Cleaned work breakdown structure"
+      - name: document_type_clean
+        description: "Cleaned document type"
+      - name: debit_credit_indicator
+        description: "Debit/Credit indicator (passthrough)"
+      - name: gb_source
+        description: "GB source indicator (passthrough)"
+    
+    meta:
+      created_by: "dbt Migration"
+      created_date: "{{ run_started_at }}"
+      source_mapping: "exp_PASSTHROUGH transformation"
+      business_purpose: "Data cleansing and standardization for GL account data"
+# --- From wf_FF_AT_ZJ_GL_ACCOUNT.XML ---
+
+models:
+  - name: stg_sap_bw_ohs__zjglaptin
+    description: "Staging model for SAP BW OHS GL Account Input data with data cleansing and standardization"
+    columns:
+      - name: ohrequid
+        description: "OH Request ID"
+        data_type: integer
+        tests:
+          - not_null
+      - name: datapakid
+        description: "Data Package ID"
+        data_type: integer
+        tests:
+          - not_null
+      - name: record
+        description: "Data Record number"
+        data_type: integer
+        tests:
+          - not_null
+      - name: account
+        description: "GL Account Number (cleaned)"
+        data_type: varchar(29)
+        tests:
+          - not_null
+      - name: cost_center
+        description: "Cost Center"
+        data_type: varchar(12)
+      - name: journal_id
+        description: "Document/Journal ID"
+        data_type: varchar(8)
+      - name: document_type
+        description: "Document Type"
+        data_type: varchar(2)
+      - name: journal_line_id
+        description: "Journal Line Number"
+        data_type: varchar(14)
+      - name: vendor_id
+        description: "Vendor ID"
+        data_type: varchar(14)
+      - name: vendor_name
+        description: "Vendor Name"
+        data_type: varchar(110)
+      - name: account_description
+        description: "Account Description"
+        data_type: varchar(60)
+      - name: currency_code_base
+        description: "Base Currency Code"
+        data_type: varchar(3)
+      - name: currency_code_from
+        description: "From Currency Code"
+        data_type: varchar(3)
+      - name: journal_line_description
+        description: "Journal Line Description (double quotes removed)"
+        data_type: varchar(90)
+      - name: remark_explanation
+        description: "Remark/Explanation (double quotes removed, truncated to 30 chars)"
+        data_type: varchar(30)
+      - name: subledger_gl
+        description: "Subledger G/L"
+        data_type: varchar(8)
+      - name: purchase_order
+        description: "Purchase Order"
+        data_type: varchar(8)
+      - name: supplier_invoice
+        description: "Supplier Invoice"
+        data_type: varchar(25)
+      - name: posting_date
+        description: "Posting Date in YYYYMMDD format"
+        data_type: varchar(8)
+        tests:
+          - not_null
+      - name: fiscal_year_period
+        description: "Fiscal Year/Period"
+        data_type: varchar(14)
+      - name: source_erp
+        description: "Source ERP Description"
+        data_type: varchar(60)
+      - name: amount
+        description: "Amount (truncated to 3 decimal places)"
+        data_type: decimal(10,0)
+      - name: local_amount
+        description: "Local Amount (truncated to 3 decimal places)"
+        data_type: decimal(10,0)
+    meta:
+      created_by: "Nitin Sharma"
+      created_date: "12-March-2020"
+      source_mapping: "m_FF_AT_ZJ_GL_ACCOUNT"
+      business_description: "Staging layer for GL account data from SAP BW with data quality transformations"
+# --- From wf_S_BP_ARURHD.XML ---
+
+models:
+  - name: stg_bpcs_arurhd
+    description: "Staging model for BPCS ARURHD (Accounts Receivable Header) - Japan BPCS system"
+    
+    columns:
+      - name: lhspcd
+        description: "Shop code - 店舗コード"
+        data_type: number
+        tests:
+          - not_null
+          
+      - name: lhspno
+        description: "Shop number - 店舗番号"
+        data_type: varchar2
+        tests:
+          - not_null
+          
+      - name: lhsptk
+        description: "Shop type code - 店舗種別コード"
+        data_type: varchar2
+        
+      - name: lhtrbk
+        description: "Transaction book code - 取引帳簿コード"
+        data_type: varchar2
+        
+      - name: lhegcd
+        description: "Entry code - 入力コード"
+        data_type: varchar2
+        
+      - name: lhedsq
+        description: "Entry sequence number - 入力順序番号"
+        data_type: number
+        
+      - name: lhcscd
+        description: "Customer code - 顧客コード"
+        data_type: varchar2
+        
+      - name: lhhpcd
+        description: "Ship-to code - 配送先コード"
+        data_type: varchar2
+        
+      - name: lhsptp
+        description: "Shop type - 店舗タイプ"
+        data_type: varchar2
+        
+      - name: lhtacd
+        description: "Tax code - 税務コード"
+        data_type: varchar2
+        
+      - name: lhspnd
+        description: "Suspend date - 保留日付"
+        data_type: number
+        
+      - name: lhnyyd
+        description: "Net year date - 年度日付"
+        data_type: number
+        
+      - name: lhrcdt
+        description: "Record date - 年度日付"
+        data_type: number
+        
+      - name: lhpayk
+        description: "Payment key - 支払キー"
+        data_type: varchar2
+        
+      - name: lhdda1
+        description: "Detail data 1 - 詳細データ1"
+        data_type: varchar2
+        
+      - name: lhdda2
+        description: "Detail data 2 - 詳細データ2"
+        data_type: varchar2
+        
+      - name: lhspat
+        description: "Shop amount - 店舗金額"
+        data_type: number
+        
+      - name: lhtaxm
+        description: "Tax amount - 税額"
+        data_type: number
+        
+      - name: lhaskm
+        description: "Ask amount - 請求額"
+        data_type: number
+        
+      - name: lhrsdt
+        description: "Reserve date - 予約日"
+        data_type: number
+        
+      - name: lhtaxh
+        description: "Tax hold - 予約税額"
+        data_type: number
+        
+      - name: lhrsam
+        description: "Reserve amount - 予約金額"
+        data_type: number
+        
+      - name: lhslcd
+        description: "Sales code - 売上コード"
+        data_type: number
+        
+      - name: lhctax
+        description: "Customer tax - 顧客税額"
+        data_type: number
+        
+      - name: lhchom
+        description: "Customer home amount - 顧客金額（本国）"
+        data_type: number
+        
+      - name: lhtden
+        description: "Trade number - 取引番号"
+        data_type: varchar2
+        
+      - name: lhtded
+        description: "Trade date - 取引日付"
+        data_type: number
+        
+      - name: lhrcrm
+        description: "Record amount - 年度取引金額"
+        data_type: number
+        
+      - name: lhdlkb
+        description: "Delete key - 削除キー"
+        data_type: varchar2
+        
+      - name: lhodno
+        description: "Order number - 注文番号"
+        data_type: varchar2
+        
+      - name: lhkhst
+        description: "Key history code - キー履歴コード"
+        data_type: varchar2
+        
+      - name: lhnksf
+        description: "Net key flag - 年度キーフラグ"
+        data_type: varchar2
+        
+      - name: lhspnk
+        description: "Shop number key - 店舗番号キー"
+        data_type: varchar2
+        
+      - name: lhnyuf
+        description: "Net year flag - 年度フラグ"
+        data_type: varchar2
+        
+      - name: lhtaxf
+        description: "Tax flag - 税フラグ"
+        data_type: varchar2
+        
+      - name: lhsefg
+        description: "Settlement flag - 決済フラグ"
+        data_type: varchar2
+        
+      - name: lhsedt
+        description: "Settlement date - 決済日付"
+        data_type: number
+        
+      - name: lhhryu
+        description: "Hold reason - 保留理由"
+        data_type: varchar2
+        
+      - name: lhdltf
+        description: "Delete flag - 削除フラグ"
+        data_type: varchar2
+        
+      - name: lhrldt
+        description: "Release date - 解除日"
+        data_type: number
+        
+      - name: lhrltm
+        description: "Release time - 解除時刻"
+        data_type: number
+        
+      - name: lhrlur
+        description: "Release user - 解除ユーザー"
+        data_type: varchar2
+        
+      - name: lhrlpg
+        description: "Release program - 解除プログラム"
+        data_type: varchar2
+        
+      - name: etl_load_dte
+        description: "ETL load timestamp - when record was loaded into staging"
+        data_type: timestamp
+        tests:
+          - not_null
+
+    # Model-level tests
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - lhspcd
+            - lhspno
+            - lhsptk
+            - lhegcd
+            - lhedsq
