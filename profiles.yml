@@ -1,0 +1,11 @@
+dbt_itemmaster:
+  target: dev
+  outputs:
+    dev:
+      type: snowflake
+      role: ACCOUNTADMIN
+      warehouse: SMALL_WH
+      database: TPC_DI_RAW_DATA
+      schema: DBT_INGEST
+      account: ' '
+      user: ' '
